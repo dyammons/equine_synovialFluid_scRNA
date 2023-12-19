@@ -2,16 +2,18 @@
 
 #load custom functions & packages
 source("/pl/active/dow_lab/dylan/repos/K9-PBMC-scRNAseq/analysisCode/customFunctions.R")
+library(scProportionTest)
+library(UpSetR)
 
 #######################################
 ### BEGIN T CELL DATA PREPROCESSING ###
 #######################################
 
-
+#load preprocessed allCells object
 seu.obj <- readRDS("./output/s3/230731_rngr612_noMods_res0.5_dims45_dist0.2_neigh25_S3.rds")
 seu.obj <- loadMeta(seu.obj = seu.obj, metaFile = "./sf_idents_08-01-2023.csv", groupBy = "clusterID", metaAdd = "majorID")
 outName <- "tcell"
-datE <- "Aug_10_2023"
+datE <- "Aug_8_2023"
 nfeatures <- 2500
 
 #subset on t cells
@@ -19,8 +21,7 @@ seu.obj <- subset(seu.obj,
                   subset = 
                   majorID ==  "tcell")
 
-
-
+#ensure subset was properly done
 table(seu.obj$majorID)
 table(seu.obj$clusterID)
 table(seu.obj$orig.ident)
@@ -30,9 +31,11 @@ seu.obj <- indReClus(seu.obj = seu.obj, outDir = "./output/s2/", subName = paste
                       vars.to.regress = "percent.mt"
                        )
 
-seu.obj <- readRDS("./output/s2/Aug_8_2023_tcell_2500_S2.rds")
+#check ideal clustering resolution
+# seu.obj <- readRDS("./output/s2/Aug_8_2023_tcell_2500_S2.rds")
 clusTree(seu.obj = seu.obj, dout = "./output/clustree/", outName = paste(datE,outName,nfeatures, sep = "_"), test_dims = c("40","35", "30"), algorithm = 3, prefix = "integrated_snn_res.")
 
+#dim reduction and unsupervised clustering
 seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = paste(datE,outName,nfeatures, sep = "_"), final.dims = 40, final.res = 1.0, stashID = "clusterID_sub", 
                         algorithm = 3, prefix = "integrated_snn_res.", min.dist = 0.3, n.neighbors = 30, assay = "integrated", saveRDS = T,
                         features = c("PTPRC", "CD3E", "CD8A", "GZMA", 
@@ -40,28 +43,29 @@ seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = pas
                                      "CD4", "MS4A1", "PPBP","HBM")
                        )
 
-
-#a cluster of susspected cell doublets identified -- remove
+### A cluster of susspected cell doublets identified -- remove
 seu.obj <- readRDS("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/s3/Aug_8_2023_tcell_2500_res1_dims40_dist0.3_neigh30_S3.rds")
 seu.obj <- loadMeta(seu.obj = seu.obj, metaFile = "./sf_idents_tcell_08-08-2023.csv", groupBy = "clusterID_sub", metaAdd = "celltype.l2")
 outName <- "tcell"
-datE <- paste(unlist(strsplit(date(), " "))[c(2,3,5)], collapse = "_")
-datE
+datE <- "Aug_10_2023"
 nfeatures <- 2500
 
-#subset on t cells
+#remove susspected cluster of doublets
 seu.obj.sub <- subset(seu.obj, invert = T,
                   subset = 
                   celltype.l2 ==  "Doublets")
 table(seu.obj.sub$celltype.l2)
 
+#complete independent reclustering
 seu.obj <- indReClus(seu.obj = seu.obj.sub, outDir = "./output/s2/", subName = paste(datE,outName,nfeatures, sep = "_") , preSub = T, nfeatures = nfeatures,
                       vars.to.regress = "percent.mt"
                        )
 
+#check cluster resolution
 # seu.obj <- readRDS("./output/s2/Aug_10_2023_tcell_2500_S2.rds")
 clusTree(seu.obj = seu.obj, dout = "./output/clustree/", outName = paste(datE,outName,nfeatures, sep = "_"), test_dims = c("40"), algorithm = 3, prefix = "integrated_snn_res.")
 
+#complete unsupervised clustering and dim reduction
 seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = paste(datE,outName,nfeatures, sep = "_"), final.dims = 40, final.res = 0.7, stashID = "clusterID_sub", 
                         algorithm = 3, prefix = "integrated_snn_res.", min.dist = 0.3, n.neighbors = 30, assay = "integrated", saveRDS = T,
                         features = c("PTPRC", "CD3E", "CD8A", "GZMA", 
@@ -70,16 +74,18 @@ seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = pas
                        )
 
 
-#generate violin plots for each cluster
-vilnPlots(seu.obj = seu.obj, groupBy = "clusterID_sub", numOfFeats = 24, outName = paste0(datE,"_",outName),
-                     outDir = paste0("./output/viln/",outName,"/"), outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS")
-                    )
+#####################################
+### END T CELL DATA PREPROCESSING ###
+#####################################
 
+#Note: the processed Seurat object is now stored as a .rds file, "./output/s3/Aug_10_2023_tcell_2500_res0.7_dims40_dist0.3_neigh30_S3.rds"
 
+##################################
+### BEGIN T CELL DATA ANALYSIS ###
+##################################
 
-
+#load in processed data and metadata
 seu.obj <- readRDS("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/s3/Aug_10_2023_tcell_2500_res0.7_dims40_dist0.3_neigh30_S3.rds")
-# seu.obj <- loadMeta(seu.obj = seu.obj, metaFile = "./sf_idents_tcell_08-08-2023.csv", groupBy = "clusterID_sub", metaAdd = "celltype.l2.orig")
 seu.obj <- loadMeta(seu.obj = seu.obj, metaFile = "./sf_idents_tcell_08-10-2023.csv", groupBy = "clusterID_sub", metaAdd = "celltype.l2")
 seu.obj <- loadMeta(seu.obj = seu.obj, metaFile = "./sf_idents_tcell_08-10-2023.csv", groupBy = "clusterID_sub", metaAdd = "celltype.l1")
 seu.obj <- loadMeta(seu.obj = seu.obj, metaFile = "./refColz.csv", groupBy = "orig.ident", metaAdd = "name")
@@ -87,11 +93,10 @@ sorted_labels <- sort(unique(seu.obj$name))
 seu.obj$name <- factor(seu.obj$name, levels = sorted_labels)
 seu.obj <- loadMeta(seu.obj = seu.obj, metaFile = "./refColz.csv", groupBy = "name", metaAdd = "colz")
 seu.obj$celltype.l2 <- factor(seu.obj$celltype.l2, levels = levels(seu.obj$celltype.l2)[c(2,3,7,1,4,6,5,8,10,11,9,12)])
-
 Idents(seu.obj) <- "orig.ident"
 seu.obj$cellSource <- as.factor(ifelse(grepl("oa", seu.obj@meta.data$orig.ident), "OA", "Normal"))
 
-#stash the numerical ID
+#create new cluster ID number based on cluster size; smallest number (0) cooresponds to largest cluster
 clusterID_final <- table(seu.obj$celltype.l2) %>% as.data.frame() %>% arrange(desc(Freq)) %>%
 mutate(clusterID_final=row_number()-1) %>% arrange(clusterID_final) 
 
@@ -102,16 +107,18 @@ seu.obj <- RenameIdents(seu.obj, newID)
 table(Idents(seu.obj))
 seu.obj$clusterID_final <- Idents(seu.obj)
 
-
+#set file output specifications
 outName <- "tcell"
 datE <- "Aug_10_2023"
 
-### Extra: Supplemental data: Generate violin plots of defining features
+
+### Data supplemental - generate violin plots of defining features
 vilnPlots(seu.obj = seu.obj, groupBy = "celltype.l2", numOfFeats = 24, outName = paste(datE, outName, sep = "_"),
           outDir = paste0("./output/viln/",outName,"/"), outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
           assay = "RNA", min.pct = 0.25, only.pos = T)
 
 
+### Data supplemental - export data for cell browser
 ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_input/", 
                markers = paste0("./output/viln/",outName,"/",datE,outName,"_gene_list.csv"), 
                reduction = "umap",  colsTOkeep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "Phase", "majorID",
@@ -199,7 +206,7 @@ pi <- VlnPlot(object = seu.obj,
                                     axis.text.y = element_blank(),
                                     axis.title.x = element_blank()
                                    )
-ggsave(paste("./output/", outName, "/", outName, "selectViln.png", sep = ""), width = 5, height =6)
+ggsave(paste("./output/", outName, "/", outName, "_selectViln.png", sep = ""), width = 5, height =6)
 
 
 ### Fig extra: generate dot plots with key features determined using findallmarkers
@@ -227,11 +234,12 @@ pi <- majorDot(seu.obj = seu.obj, groupBy = "celltype.l2",
               ) + theme(axis.title = element_blank(),
                         axis.text = element_text(size = 12)
                        )
-ggsave(paste("./output/", outName, "/", outName, "_majorDot.png", sep = ""), width =10, height = 5)
+ggsave(paste("./output/", outName, "/", outName, "_majorDot.png", sep = ""), width = 10, height = 5)
 
 
+### Fig supp 3b - reference map using eq PBMC data
 
-### Reference map using eq PBMC data
+#load in preprocessed and annotated equine pbmc data from patel et. al
 reference <- readRDS("./output/s3/2023_09_11_pbmc_data_res0.4_dims50_dist0.5_neigh50_S3.rds")
 reference$celltype.l2 %>% table()
 Idents(reference) <- "celltype.l2"
@@ -240,7 +248,6 @@ reference <- subset(reference,
                             "T CD4+ cytotoxic","T CD8+ naïve","NK","T gd"))
 
 reference[['integrated']] <- as(object = reference[['integrated']] , Class = "SCTAssay")
-
 DefaultAssay(reference) <- "integrated"
 
 anchors <- FindTransferAnchors(
@@ -267,13 +274,40 @@ pi <- DimPlot(seu.obj,
 pi <- formatUMAP(plot = pi) + theme(axis.title = element_blank(),
                              panel.border = element_blank()
                             ) + NoLegend() + coord_cartesian(clip = "off")
-ggsave(paste("./output/", outName,"/",outName, "_umap_tcell_Predicted_equine.png", sep = ""), width = 7, height = 7)
+ggsave(paste("./output/", outName,"/",outName, "_supp3b.png", sep = ""), width = 7, height = 7)
 
 #inspect numbers
 table(seu.obj$predicted.id,seu.obj$celltype.l2)
 
 
-### Fig supp: umap by sample
+### Fig supp 3c - dge analysis IL23R_gd_T2 vs IL23R_gd_T1
+p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T2", idents.2 = "IL23R_gd_T1", 
+                      bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, labSize = 4,
+                      minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T2_VS_IL23R_gd_T1", 
+                      idents.1_NAME = "IL23R gd T2", idents.2_NAME = "IL23R gd T1", returnVolc = T, 
+                      doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24
+                    )
+
+p  <- prettyVolc(plot = p_volc[[1]], rightLab = "IL23R gd T2", 
+                 leftLab = "IL23R gd T1", arrowz = T) + labs(x = "log2(FC)") + theme(axis.title = element_text(size = 24),
+                                                                                     axis.text = element_text(size = 18),
+                                                                                     plot.title = element_blank(),
+                                                                                     legend.position = c(0.10, 0.85)
+                                                                                    ) + ggtitle("IL23R gd T2 vs IL23R gd T1")
+
+ggsave(paste("./output/", outName, "/", outName, "_supp3c.png", sep = ""), width = 7, height = 7)
+
+
+### Fig supp 3d - Evlauate cell frequency by cluster
+freqy <- freqPlots(seu.obj, method = 1, nrow = 3, groupBy = "celltype.l2", comp = "cellSource", legTitle = "Cell source", refVal = "name", showPval = T,
+              namez = levels(seu.obj$name), 
+              colz = levels(seu.obj$colz)
+              )
+
+ggsave(paste("./output/", outName, "/",outName, "_supp3d.png", sep = ""), width = 4, height = 2.5, scale = 2)
+
+
+### Fig supp 3e - umap by sample
 Idents(seu.obj) <- "orig.ident"
 set.seed(12)
 seu.obj.ds <- subset(x = seu.obj, downsample = min(table(seu.obj@meta.data$orig.ident)))
@@ -285,22 +319,12 @@ pi <- DimPlot(seu.obj.ds,
               label = FALSE,
               shuffle = TRUE
 )
-p <- formatUMAP(pi) + labs(colour="") + theme(legend.position = "top", legend.direction = "horizontal",legend.title=element_text(size=12)) + guides(colour = guide_legend(nrow = 1, override.aes = list(size = 4)))
-ggsave(paste("./output/", outName, "/", outName, "umap_bySample.png", sep = ""), width =7, height = 7)
+p <- formatUMAP(pi) + NoLegend()
+ggsave(paste("./output/", outName, "/", outName, "_supp3e.png", sep = ""), width = 7, height = 7)
 
 
-### Fig supp: Evlauate cell frequency by cluster
-freqy <- freqPlots(seu.obj, method = 1, nrow= 3, groupBy = "celltype.l2", comp = "cellSource", legTitle = "Cell source", refVal = "name", showPval = T,
-              namez = levels(seu.obj$name), 
-              colz = levels(seu.obj$colz)
-              )
-
-ggsave(paste("./output/", outName, "/",outName, "_freqPlots_1.png", sep = ""), width = 8.5, height = 9)
-
-
-### Fig 3c: Evlauate cell frequency by cluster using monte carlo permutation
-library(scProportionTest)
-
+### Fig 3c: Evaluate cell frequency by cluster using monte carlo permutation
+log2FD_threshold <- 0.58
 Idents(seu.obj) <- "name"
 set.seed(12)
 seu.obj.sub <- subset(x = seu.obj, downsample = min(table(seu.obj$name)))
@@ -328,11 +352,10 @@ geom_hline(yintercept = 0) + scale_color_manual(values = c("blue", "red","grey")
                                                          plot.margin = margin(c(3,3,0,24))
                                                         ) + ylab("abundance change (log2FC)")
 
+ggsave(paste("./output/", outName, "/",outName, "_fig3c.png", sep = ""), width = 3.5, height = 2, scale = 2 )
 
-ggsave(paste("./output/", outName, "/",outName, "_propTest_majorID_sub-wDS.png", sep = ""), width = 3.5, height = 2, scale = 2 )
 
-
-### Fig 3d:
+### Fig 3d - gene sig comparing IL23R_gd_T1 to other T cells
 p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T1", idents.2 = NULL, bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, topn = c(10,10), labSize = 4,
                         minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T1_VS_otherT", idents.1_NAME = "IL23R gd T1", idents.2_NAME = "other T cells", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24
                     )
@@ -344,20 +367,21 @@ p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL,
                                                                             legend.text = element_text(size= 16),
                                                                                      legend.position = c(0.15, 0.75)
                                                                                                       
-                                                     ) + ggtitle("IL23R gd T1 vs other T cells")
+                                                     ) + ggtitle("IL23R gd T1 vs other T cells") + NoLegend()
 
-ggsave(paste("./output/", outName, "/", outName, "_il23r_T1_volcPlot.png", sep = ""), width = 7, height = 7)
+ggsave(paste("./output/", outName, "/", outName, "_fig3d.png", sep = ""), width = 7, height = 7)
 
 
+### Fig extra - GSEA of gene sig comparing IL23R_gd_T1 to other T cells
 degs.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/tcell/IL23R_gd_T1_vs_other_T_cells_all_genes.csv")
 degs.df %>% filter(padj < 0.05) %>% mutate(rection = ifelse(log2FoldChange > 0, "UP", "DWN")) %>% group_by(rection) %>% summarize(cnts = n())
 up.genes <- degs.df %>% filter(padj < 0.05, log2FoldChange > 0) %>% pull(gene)
-p <- plotGSEA(geneList = up.genes, geneListDwn = NULL, category = "C5", upCol = "red", dwnCol = "blue", upOnly = T, termsTOplot=1000)
+p <- plotGSEA(geneList = up.genes, species = "equine", geneListDwn = NULL, category = "C5", upCol = "red", dwnCol = "blue", upOnly = T, termsTOplot=1000)
 pi <- p + theme(axis.title=element_text(size = 16)) + scale_x_continuous(limits = c(-10,ceiling(max(p$data$x_axis)*1.05)), breaks = c(0,ceiling(max(p$data$x_axis)*1.05)/2,ceiling(max(p$data$x_axis)*1.05)),name = "log10(p.adj)") + ggtitle("Gene ontology") + theme(plot.title = element_text(size = 20, hjust = 0.5))
-ggsave(paste("./output/", outName,"/", outName, "gd_enriched_terms_2.png", sep = ""), width = 7, height =7)
+ggsave(paste("./output/", outName,"/", outName, "_gd_il23r_T1_enriched_terms.png", sep = ""), width = 7, height =7)
 
 
-### Fig 3e:
+### Fig 3e - gene sig comparing IL23R_gd_T2 to other T cells
 p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T2", idents.2 = NULL, bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, labSize = 4, topn = c(10,10),
                         minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T2_VS_otherT", idents.1_NAME = "IL23R gd T2", idents.2_NAME = "other T cells", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24
                     )
@@ -369,54 +393,66 @@ p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL,
                                                                             legend.text = element_text(size= 16),
                                                                                      legend.position = c(0.15, 0.9)
                                                                                                       
-                                                     ) + ggtitle("IL23R gd T2 vs other T cells")
+                                                     ) + ggtitle("IL23R gd T2 vs other T cells") + NoLegend()
 
-ggsave(paste("./output/", outName, "/", outName, "_il23r_T2_volcPlot.png", sep = ""), width = 7, height = 7)
+ggsave(paste("./output/", outName, "/", outName, "_fig3e.png", sep = ""), width = 7, height = 7)
 
+
+### Fig extra - GSEA of gene sig comparing IL23R_gd_T2 to other T cells
 degs.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/tcell/IL23R_gd_T2_vs_other_T_cells_all_genes.csv")
 degs.df %>% filter(padj < 0.05) %>% mutate(rection = ifelse(log2FoldChange > 0, "UP", "DWN")) %>% group_by(rection) %>% summarize(cnts = n())
 up.genes <- degs.df %>% filter(padj < 0.05, log2FoldChange > 0) %>% pull(gene)
-p <- plotGSEA(geneList = up.genes, geneListDwn = NULL, category = "C5", upCol = "red", dwnCol = "blue", upOnly = T, termsTOplot=1000)
+p <- plotGSEA(geneList = up.genes, geneListDwn = NULL, species = "equine", category = "C5", upCol = "red", dwnCol = "blue", upOnly = T, termsTOplot=1000)
 pi <- p + theme(axis.title=element_text(size = 16)) + scale_x_continuous(limits = c(-10,ceiling(max(p$data$x_axis)*1.05)), breaks = c(0,ceiling(max(p$data$x_axis)*1.05)/2,ceiling(max(p$data$x_axis)*1.05)),name = "log10(p.adj)") + ggtitle("Gene ontology") + theme(plot.title = element_text(size = 20, hjust = 0.5))
-ggsave(paste("./output/", outName,"/", outName, "gd_enriched_terms_2.png", sep = ""), width = 7, height =7)
+ggsave(paste("./output/", outName,"/", outName, "_gd_il23r_T2_enriched_terms.png", sep = ""), width = 7, height =7)
 
 
+### Fig supp 3f - upset plot of gd T cell gene signature overlap
 
-
+#load in dge results
 IL23R_gd_T1.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/tcell/IL23R_gd_T1_vs_other_T_cells_all_genes.csv")
 IL23R_gd_T2.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/tcell/IL23R_gd_T2_vs_other_T_cells_all_genes.csv")
 
-
-library(UpSetR)
+#organize the data
 upSet.df <- as.data.frame(unique(c(IL23R_gd_T1.df$gene,IL23R_gd_T2.df$gene)))
 colnames(upSet.df) <- "gene"
 upSet.df$`IL23R gd T1` <- as.integer(ifelse(upSet.df$gene %in% IL23R_gd_T1.df$gene, 1, 0))
 upSet.df$`IL23R gd T2` <- as.integer(ifelse(upSet.df$gene %in% IL23R_gd_T2.df$gene, 1, 0))
 
-
-# Plot sample distance heatmap with ComplexHeatmap
-png(file = paste0("./output/", outName, "/", outName, "_upSet.png"), width=1500, height=2000, res=400)
+#plot the upset
+png(file = paste0("./output/", outName, "/", outName, "_supp3f.png"), width=1500, height=2000, res=400)
 par(mfcol=c(1,1))     
-p <- upset(upSet.df, sets = colnames(upSet.df)[2:3], , cutoff = 10,  nintersects = 60)
+p <- upset(upSet.df, sets = colnames(upSet.df)[2:3], mb.ratio = c(0.65, 0.35))
 p
 dev.off()
 
 
-### Fig 3e:
-p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T2", idents.2 = "IL23R_gd_T1", bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, labSize = 4,
-                        minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T2_VS_IL23R_gd_T1", idents.1_NAME = "IL23R gd T2", idents.2_NAME = "IL23R gd T1", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24
+### Fig extra - dge analysis IL23R_gd_T1 & IL23R_gd_T2 vs other T cells
+p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = c("IL23R_gd_T1", "IL23R_gd_T2"), idents.2 = NULL, bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, topn = c(10,10), labSize = 4,
+                        minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_VS_otherT", idents.1_NAME = "IL23R gd", idents.2_NAME = "other T cells", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24
                     )
 
-p  <- prettyVolc(plot = p_volc[[1]], rightLab = "IL23R gd T2", 
-                 leftLab = "IL23R gd T1", arrowz = T) + labs(x = "log2(FC)") + theme(axis.title = element_text(size = 24),
+p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL, 
+                 leftLab = NULL, arrowz = F) + labs(x = "log2(FC)") + theme(axis.title = element_text(size = 24),
                                                                                                       axis.text = element_text(size = 18),
-                                                                                                      plot.title = element_blank(),
-                                                                                     legend.position = c(0.10, 0.85)
+                                                                                                      plot.title = element_text(size = 28),
+                                                                            legend.text = element_text(size= 16),
+                                                                                     legend.position = c(0.15, 0.75)
                                                                                                       
-                                                     ) + ggtitle("IL23R gd T2 vs IL23R gd T1")
+                                                     ) + ggtitle("IL23R gd vs other T cells")
 
-ggsave(paste("./output/", outName, "/", outName, "_il23r_T2_vs_1_volcPlot.png", sep = ""), width = 7, height = 7)
+ggsave(paste("./output/", outName, "/", outName, "_il23r_volcPlot.png", sep = ""), width = 7, height = 7)
 
 
+### Fig 3f - GSEA of dge results IL23R_gd_T1 & IL23R_gd_T2 vs other T cells
+degs.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/tcell/IL23R_gd_vs_other_T_cells_all_genes.csv")
+degs.df %>% filter(padj < 0.01) %>% mutate(rection = ifelse(log2FoldChange > 0, "UP", "DWN")) %>% group_by(rection) %>% summarize(cnts = n())
+up.genes <- degs.df %>% filter(padj < 0.01, log2FoldChange > 0) %>% pull(gene)
+p <- plotGSEA(geneList = up.genes, species = "equine", geneListDwn = NULL, category = "C5", upCol = "red", dwnCol = "blue", upOnly = T, termsTOplot = 30)
 
+pi <- p + theme(axis.title = element_text(size = 24),
+                axis.text = element_text(size = 18)
+               ) + scale_x_continuous(limits = c(-17,ceiling(max(p$data$x_axis)*1.05)), breaks = c(0,ceiling(max(p$data$x_axis)*1.05)),name = "-log10(p.adj)") + ggtitle("Gene ontology") + theme(plot.title = element_text(size = 28, hjust = 0.5))
+
+ggsave(paste("./output/", outName,"/", outName, "_fig3f.png", sep = ""), width = 7, height = 7)
 
