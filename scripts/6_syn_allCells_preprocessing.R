@@ -9,7 +9,7 @@ outName <- "allCells_syn"
 ### BEGIN DATA PREPROCESSING ###
 ################################
 
-### prepare healthy vs OA synovial fluid datasets
+### prepare healthy vs OA synovium datasets
 
 #load in 10x data and qc filter each sample
 load10x(din = "./input_synovium/", dout = "./output/s1/", outName = "230929_rngr612_noMods", testQC = F, nFeature_RNA_high = 4000, nFeature_RNA_low = 100, percent.mt_high = 12.5, nCount_RNA_high = 25000, nCount_RNA_low = 500)
