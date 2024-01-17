@@ -2,6 +2,7 @@
 
 #load custom functions & packages
 source("/pl/active/dow_lab/dylan/repos/K9-PBMC-scRNAseq/analysisCode/customFunctions.R")
+library(scProportionTest)
 
 #################################################
 ### BEGIN LABEL TRANSFER TO ALL CELLS DATASET ###
@@ -50,14 +51,35 @@ seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = "23
 ### END CELL TYPE ANNOTATION TRANSFER ###
 #########################################
 
-### NOTE: the output rds file: "./output/s3/Dec_19_2023_allCells_2500_res0.7_dims40_dist0.3_neigh30_S3.rds", contains the processed data that will be used of subset analysis of each major population.
+### NOTE: the output rds file: "./output/s3/231220_rngr612_noMods_res0.7_dims50_dist0.2_neigh25_S3.rds", contains the processed data that will be used of subset analysis of each major population.
 
 ####################################
 ### BEGIN ALL CELL DATA ANALYSIS ###
 ####################################
 
+#load in processed data
+seu.obj <- readRDS("./output/s3/231220_rngr612_noMods_res0.7_dims50_dist0.2_neigh25_S3.rds")
+outName <- "allCells_syn"
+
+#create new cluster ID number based on cluster size; smallest number (0) cooresponds to largest cluster
+clusterID_major <- table(seu.obj$finalClusters) %>% as.data.frame() %>% arrange(desc(Freq)) %>%
+mutate(clusterID_major=row_number()-1) %>% arrange(clusterID_major) 
+
+newID <- clusterID_major$clusterID_major
+names(newID) <- clusterID_major$Var1
+Idents(seu.obj) <- "finalClusters"
+seu.obj <- RenameIdents(seu.obj, newID)
+table(Idents(seu.obj))
+seu.obj$clusterID_major <- Idents(seu.obj)
+
+seu.obj$finalClusters <- ifelse(grepl("synoviocyte", seu.obj$finalClusters), paste0("Synoviocyte_c",seu.obj$clusterID_major), as.character(seu.obj$finalClusters))
 
 ### Data supplemental - generate violin plots of defining features
+
+vilnPlots(seu.obj = seu.obj, groupBy = "majorID_pertyName", numOfFeats = 24, outName = "eqsyn_n1_n1",
+                      outDir = "./output/viln/allCells/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), assay = "RNA", resume = T, resumeFile = "/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/viln/allCells/eqsyn_n1_n1_gene_list.csv",
+                      min.pct = 0.25, only.pos = T)
+
 vilnPlots(seu.obj = seu.obj, groupBy = "finalClusters", numOfFeats = 24, outName = "eqsyn_n1_n1",
                       outDir = "./output/viln/allCells/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), assay = "RNA", 
                       min.pct = 0.25, only.pos = T)
@@ -72,23 +94,13 @@ ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_inp
                                      "IL7R", "ANPEP", "FLT3", "DLA-DRA", 
                                      "CD4", "MS4A1", "FBLN1","ACAT2")
                           
-                          )    
+                          )
 
-#create new cluster ID number based on cluster size; smallest number (0) cooresponds to largest cluster
-clusterID_major <- table(seu.obj$finalClusters) %>% as.data.frame() %>% arrange(desc(Freq)) %>%
-mutate(clusterID_major=row_number()-1) %>% arrange(clusterID_major) 
-
-newID <- clusterID_major$clusterID_major
-names(newID) <- clusterID_major$Var1
-Idents(seu.obj) <- "finalClusters"
-seu.obj <- RenameIdents(seu.obj, newID)
-table(Idents(seu.obj))
-seu.obj$clusterID_major <- Idents(seu.obj)
-
-
-gg_color_hue(33)[c(T,F,F)]
+#set colors
 colz.base <- c("#00C1A7","#00A6FF","#00BADE", "#64B200", "#00B5ED", "#00C0BB", "#619CFF", "#AEA200", "#DB8E00", "#B385FF", "#F8766D") 
-### Fig 1a: plot inital cluster umap
+
+
+### Fig 5a: plot inital cluster umap
 pi <- DimPlot(seu.obj, 
               reduction = "umap", 
               group.by = "clusterID_major",
@@ -124,25 +136,24 @@ p <- prettyFeats(seu.obj = seu.obj,pt.size = 0.00000001, nrow = 4, ncol = 4, tit
 ggsave(paste("./output/", outName, "/", outName, "_fig5b.png", sep = ""), width = 12, height = 12, scale = 1)
 
 
-
-#method of downsampling profoundly impacts the intpretations -- rec dwn sample by name over cellSource
-library(scProportionTest)
-
+### Fig 5c: plot inital cluster umap
 Idents(seu.obj) <- "name"
 set.seed(12)
 seu.obj.sub <- subset(x = seu.obj, downsample = min(table(seu.obj$name)))
-prop_test <- sc_utils(seu.obj.sub)
-prop_test <- permutation_test( prop_test, cluster_identity = "finalClusters", sample_1 = "Normal", sample_2 = "OA", sample_identity = "cellSource" )
 
-res.df <- prop_test@results$permutation
 log2FD_threshold <- 0.58
 
+prop_test <- sc_utils(seu.obj.sub)
+prop_test <- permutation_test( prop_test, cluster_identity = "finalClusters", sample_1 = "Normal", sample_2 = "OA", sample_identity = "cellSource" )
+p <- permutation_plot(prop_test)  + theme(axis.title.y = element_blank(),
+                                          legend.position = "top") + guides(colour = guide_legend("", nrow = 2, 
+                                                                                                  byrow = TRUE)) + coord_flip()
+
+res.df <- prop_test@results$permutation
 res.df <- res.df %>% mutate(Significance = as.factor(ifelse(obs_log2FD < -log2FD_threshold & FDR < 0.01,"Down",
                                                             ifelse(obs_log2FD > log2FD_threshold & FDR < 0.01,"Up","n.s.")))
                            ) %>% arrange(obs_log2FD)
-
 res.df$clusters <- factor(res.df$clusters, levels = c(res.df$clusters))
-
 
 p <- ggplot(res.df, aes(x = clusters, y = obs_log2FD)) + 
 geom_pointrange(aes(ymin = boot_CI_2.5, ymax = boot_CI_97.5, 
@@ -150,11 +161,15 @@ geom_pointrange(aes(ymin = boot_CI_2.5, ymax = boot_CI_97.5,
                                                                      lty = 2) + geom_hline(yintercept = -log2FD_threshold, 
                                                                                            lty = 2) + 
 geom_hline(yintercept = 0) + scale_color_manual(values = c("blue", "red","grey")
-                                               ) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+                                               ) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size = 14),
                                                          axis.title.x = element_blank(),
-                                                         legend.position = "top")
+                                                         axis.title.y = element_text(size = 12),
+                                                         legend.text = element_text(size = 12),
+                                                         legend.title = element_text(size = 12),
+                                                         legend.position = "top",
+                                                         plot.margin = margin(c(3,3,0,30))
+                                                        ) + ylab("abundance change (log2FC)")
 
-
-ggsave(paste("./output/", outName, "/",outName, "_propTest_clusterID-wDS.png", sep = ""), width = 6, height = 3)
+ggsave(paste("./output/", outName, "/",outName, "_fig2c.png", sep = ""), width = 3.5, height = 2, scale = 2 )
 
 

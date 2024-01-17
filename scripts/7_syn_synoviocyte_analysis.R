@@ -128,37 +128,27 @@ ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_inp
                                      "CD4", "MS4A1", "FBLN1","ACAT2")
                           
                           )    
-                     
-
-### 
-Idents(seu.obj) <- "name"
-set.seed(12)
-seu.obj.sub <- subset(x = seu.obj, downsample = min(table(seu.obj$name)))
-prop_test <- sc_utils(seu.obj.sub)
-prop_test <- permutation_test( prop_test, cluster_identity = "clusterID_sub", sample_1 = "Normal", sample_2 = "OA", sample_identity = "cellSource" )
-
-res.df <- prop_test@results$permutation
-log2FD_threshold <- 0.58
-
-res.df <- res.df %>% mutate(Significance = as.factor(ifelse(obs_log2FD < -log2FD_threshold & FDR < 0.01,"Down",
-                                                            ifelse(obs_log2FD > log2FD_threshold & FDR < 0.01,"Up","n.s.")))
-                           ) %>% arrange(obs_log2FD)
-
-res.df$clusters <- factor(res.df$clusters, levels = c(res.df$clusters))
 
 
-p <- ggplot(res.df, aes(x = clusters, y = obs_log2FD)) + 
-geom_pointrange(aes(ymin = boot_CI_2.5, ymax = boot_CI_97.5, 
-                    color = Significance)) + theme_bw() + geom_hline(yintercept = log2FD_threshold, 
-                                                                     lty = 2) + geom_hline(yintercept = -log2FD_threshold, 
-                                                                                           lty = 2) + 
-geom_hline(yintercept = 0) + scale_color_manual(values = c("blue", "red","grey")
-                                               ) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-                                                         axis.title.x = element_blank(),
-                                                         legend.position = "top")
+### Fig supp 5a: plot unsuperzised clustering of synoviocytes
+pi <- DimPlot(seu.obj, 
+              reduction = "umap", 
+              group.by = "clusterID_sub",
+#               cols = colz.base,
+              pt.size = 0.25,
+              label = TRUE,
+              label.box = TRUE,
+              repel = TRUE
+ )
+p <- cusLabels(plot = pi, shape = 21, size = 10, textSize = 6, alpha = 0.8, smallAxes = T)
+ggsave(paste("./output/", outName, "/", outName, "_supp5a.png", sep = ""), width = 7, height = 7)
 
 
-ggsave(paste("./output/", outName, "/",outName, "_propTest_clusterID-wDS.png", sep = ""), width = 6, height = 3)
+### Fig supp 5b: dot plot of key features that define synoviocytes
+p <- autoDot(seu.integrated.obj = seu.obj, inFile = "./output/viln/syn/eqsyn_n1_n1_gene_list.csv", groupBy = "clusterID_sub",
+                     MIN_LOGFOLD_CHANGE = 0.5, MIN_PCT_CELLS_EXPR_GENE = 0.1
+                    )
+ggsave(paste("./output/", outName, "/", outName, "_supp5b.png", sep = ""), width = 8, height = 9)
 
 
 #######################################

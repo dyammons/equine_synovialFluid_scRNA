@@ -188,6 +188,12 @@ p <- prettyFeats(seu.obj = seu.obj, pt.size = 0.00000001, nrow = 4, ncol = 4, ti
 ggsave(paste("./output/", outName, "/", outName, "_fig3b.png", sep = ""), width = 12, height = 12)
 
 
+### Fig supp: Plot key feats
+features <-  c("CD4","CD8A")
+p <- prettyFeats(seu.obj = seu.obj, pt.size = 0.00000001, nrow = 1, ncol = 2, title.size = 12, features = features, order = F, noLegend = T) 
+ggsave(paste("./output/", outName, "/", outName, "_feat_CD4_CD8.png", sep = ""), width = 6, height = 3)
+
+
 ### Fig extra: Create violin plots for key feats
 features <- c("CTSW","TRAT1","TRDC", 
               "GZMA", "GZMB",
