@@ -1,7 +1,7 @@
 #!/usr/bin/Rscript
 
 #load custom functions & packages
-source("/pl/active/dow_lab/dylan/repos/K9-PBMC-scRNAseq/analysisCode/customFunctions.R")
+source("/pl/active/dow_lab/dylan/repos/scrna-seq/analysis-code/customFunctions.R")
 
 #################################################
 ### BEGIN LABEL TRANSFER TO ALL CELLS DATASET ###
@@ -119,7 +119,7 @@ seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = pas
 ### END CELL TYPE ANNOTATION TRANSFER ###
 #########################################
 
-### NOTE: the output rds file: "./output/s3/Dec_19_2023_allCells_2500_res0.7_dims40_dist0.3_neigh30_S3.rds", contains the processed data that will be used of subset analysis of each major population.
+### NOTE: the output rds file: "./output/s3/Dec_19_2023_allCells_2500_res0.7_dims40_dist0.3_neigh30_S3.rds", contains the processed data that will be used for analysis of all cells.
 
 ####################################
 ### BEGIN ALL CELL DATA ANALYSIS ###
@@ -242,6 +242,27 @@ ggsave(paste("./output/", outName, "/", outName, "_fig1c.png", sep = ""), width 
 linDEG(seu.obj = seu.obj, threshold = 1, thresLine = F, groupBy = "celltype.l1", comparision = "cellSource", outDir = paste0("./output/", outName,"/linDEG/"), outName = "allCells", cluster = NULL, labCutoff = 10, noTitle = F, labsHide = "^ENSECAG", contrast = c("OA", "Normal"),
                    colUp = "red", colDwn = "blue", subtitle = T, returnUpList = F, returnDwnList = F, forceReturn = F, useLineThreshold = F, pValCutoff = 0.01, saveGeneList = T, returnPlots = F
                   )
+
+
+### Complete pseudobulk DGE by all cells
+createPB(seu.obj = seu.obj, groupBy = "celltype.l1", comp = "cellSource", biologicalRep = "name", lowFilter = T, dwnSam = F, 
+         clusters = NULL, outDir = paste0("./output/", outName, "/pseudoBulk/"), min.cell = 5,
+         grepTerm = "Normal", grepLabel = c("Normal", "OA")
+)
+
+df <- read.csv(paste0("./output/", outName, "/pseudoBulk/celltype.l1_deg_metaData.csv"), row.names = 1)
+df$horse <- unlist(lapply(df$sampleID, function(x){strsplit(x, "_")[[1]][2]}))
+df <- df %>% mutate(horse = ifelse(sampleID == "Normal_3", "horse_4", paste0("horse_",horse)))
+write.csv(df, paste0("./output/", outName, "/pseudoBulk/celltype.l1_deg_metaData.csv"))
+
+pseudoDEG(metaPWD = paste0("./output/", outName, "/pseudoBulk/celltype.l1_deg_metaData.csv"),
+          padj_cutoff = 0.05, lfcCut = 0.58, outDir = paste0("./output/", outName, "/pseudoBulk/"), 
+          outName = outName, 
+          paired = T, pairBy = "horse",
+          idents.1_NAME = "OA", idents.2_NAME = "Normal",
+          inDir = paste0("./output/", outName, "/pseudoBulk/"), title = "All cells", 
+          filterTerm = "ZZZZ", addLabs = NULL, mkDir = T
+)
 
 #load dge results and create heatmap of degs
 files <- list.files(path = "/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/allCells/linDEG/", pattern=".csv", all.files=FALSE,
