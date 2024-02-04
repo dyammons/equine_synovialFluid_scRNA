@@ -113,19 +113,18 @@ datE <- "Aug_10_2023"
 
 
 ### Data supplemental - generate violin plots of defining features
-vilnPlots(seu.obj = seu.obj, groupBy = "celltype.l2", numOfFeats = 24, outName = paste(datE, outName, sep = "_"),
-          outDir = paste0("./output/viln/",outName,"/"), outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
+vilnPlots(seu.obj = seu.obj, groupBy = "celltype.l2", numOfFeats = 24, outName = "supplemental_data_7", returnViln = F, 
+          outDir = "./output/supplementalData/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
           assay = "RNA", min.pct = 0.25, only.pos = T)
 
 
 ### Data supplemental - export data for cell browser
 ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_input/", 
-               markers = paste0("./output/viln/",outName,"/",datE,outName,"_gene_list.csv"), 
+               markers = "./output/supplementalData/supplemental_data_7.csv", 
                reduction = "umap",  colsTOkeep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "Phase", "majorID",
                                                    "clusterID", "clusterID_sub", "celltype.l2", "name", "cellSource"), 
                skipEXPR = F, test = F,
                            feats = c("CD3E", "GZMA", "ADGRG1")
-                          
                           )
 
 #load in colors

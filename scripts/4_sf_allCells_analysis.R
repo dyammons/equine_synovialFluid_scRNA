@@ -146,6 +146,19 @@ seu.obj <- RenameIdents(seu.obj, newID)
 table(Idents(seu.obj))
 seu.obj$clusterID_major <- Idents(seu.obj)
 
+
+### Data supplemental - generate violin plots of defining features
+vilnPlots(seu.obj = seu.obj, groupBy = "celltype.l1", numOfFeats = 24, outName = "supplemental_data_1", returnViln = F, 
+          outDir = "./output/supplementalData/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
+          assay = "RNA", min.pct = 0.25, only.pos = T)
+
+
+### Data supplemental - generate violin plots of defining features
+vilnPlots(seu.obj = seu.obj, groupBy = "celltype.l2", numOfFeats = 24, outName = "supplemental_data_2", returnViln = F, 
+          outDir = "./output/supplementalData/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
+          assay = "RNA", min.pct = 0.25, only.pos = T)
+
+
 #get colors for each cell type
 colz.base <- c(tc.df$newCol, mye.df$newCol, gg_color_hue(length(levels(seu.obj$celltype.l2)))[c(20,3)])
 names(colz.base) <- c(tc.df$celltype.l2, mye.df$majorID, levels(seu.obj$celltype.l2)[c(2,6)])

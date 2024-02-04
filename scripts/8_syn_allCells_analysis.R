@@ -75,14 +75,13 @@ seu.obj$clusterID_major <- Idents(seu.obj)
 seu.obj$finalClusters <- ifelse(grepl("synoviocyte", seu.obj$finalClusters), paste0("Synoviocyte_c",seu.obj$clusterID_major), as.character(seu.obj$finalClusters))
 
 ### Data supplemental - generate violin plots of defining features
+vilnPlots(seu.obj = seu.obj, groupBy = "majorID_pertyName", numOfFeats = 24, outName = "supplemental_data_8", returnViln = F, 
+          outDir = "./output/supplementalData/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
+          assay = "RNA", min.pct = 0.25, only.pos = T)
 
-vilnPlots(seu.obj = seu.obj, groupBy = "majorID_pertyName", numOfFeats = 24, outName = "eqsyn_n1_n1",
-                      outDir = "./output/viln/allCells/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), assay = "RNA", resume = T, resumeFile = "/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/viln/allCells/eqsyn_n1_n1_gene_list.csv",
-                      min.pct = 0.25, only.pos = T)
-
-vilnPlots(seu.obj = seu.obj, groupBy = "finalClusters", numOfFeats = 24, outName = "eqsyn_n1_n1",
-                      outDir = "./output/viln/allCells/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), assay = "RNA", 
-                      min.pct = 0.25, only.pos = T)
+vilnPlots(seu.obj = seu.obj, groupBy = "finalClusters", numOfFeats = 24, outName = "supplemental_data_9", returnViln = F, 
+          outDir = "./output/supplementalData/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
+          assay = "RNA", min.pct = 0.25, only.pos = T)
 
 
 ### Data supplemental - export data for cell browser

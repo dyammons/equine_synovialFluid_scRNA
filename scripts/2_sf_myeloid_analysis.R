@@ -154,8 +154,8 @@ seu.obj$majorID_sub2 <- Idents(seu.obj)
 
 
 ### Data supplemental - generate violin plots of defining features
-vilnPlots(seu.obj = seu.obj, groupBy = "majorID_sub", numOfFeats = 24, outName = paste(datE, outName, sep = "_"),
-                      outDir = paste0("./output/viln/",outName,"/"), outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), assay = "RNA", 
+vilnPlots(seu.obj = seu.obj, groupBy = "majorID_sub", numOfFeats = 24, outName = "supplemental_data_4", returnViln = F, 
+                      outDir = paste0("./output/supplementalData/"), outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), assay = "RNA", 
                       min.pct = 0.25, only.pos = T)
 
 
