@@ -270,8 +270,9 @@ files <- list.files(path = "/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/
 
 df.list <- lapply(files, read.csv, header = T)
 df <- bind_rows(df.list, .id = "column_label")
-df.res <- df[df$p_val_adj < 0.01, ] %>% group_by(cellType) %>% summarize(cnts = n()) %>% as.data.frame()
+df.res <- df %>% group_by(cellType) %>% summarize(cnts = n()) %>% as.data.frame()
 df.res <- df.res[match(levels(seu.obj$celltype.l1), df.res$cellType), ]
+df.res$cellType <- gsub("_", " ", df.res$cellType)
 df.res$cnts <- as.numeric(df.res$cnts)
 
 rownames(df.res) <- df.res$cellType

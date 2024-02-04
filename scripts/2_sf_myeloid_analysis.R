@@ -1,7 +1,7 @@
 #!/usr/bin/Rscript
 
 #load custom functions & packages
-source("/pl/active/dow_lab/dylan/repos/K9-PBMC-scRNAseq/analysisCode/customFunctions.R")
+source("/pl/active/dow_lab/dylan/repos/scrna-seq/analysis-code/customFunctions.R")
 
 ########################################
 ### BEGIN MYELOID DATA PREPROCESSING ###
@@ -238,11 +238,11 @@ ggsave(paste("./output/", outName, "/", outName, "_key_feats.png", sep = ""), wi
 
 
 ### Fig 2b: Create violin plots for key feats
-features <- c("AIF1","DRA",
-              "SELP", "CSF3R", "SELL","S100A12",
-              "VCAN", "LYZ",
+features <- c("AIF1","DRA","ITGAX",
+              "SELP", "CSF3R","SELL",
+              "CXCL8","VCAN", "LYZ",
               "AQP9",
-              "CCL14","MSR1","CSF1R",
+              "MSR1","CSF1R",
               "CCL2","CCL8","LYVE1",
               "TPPP3",
               "MARCO","CD5L","GPNMB",

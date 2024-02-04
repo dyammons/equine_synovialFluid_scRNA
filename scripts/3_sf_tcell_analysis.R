@@ -1,7 +1,7 @@
 #!/usr/bin/Rscript
 
 #load custom functions & packages
-source("/pl/active/dow_lab/dylan/repos/K9-PBMC-scRNAseq/analysisCode/customFunctions.R")
+source("/pl/active/dow_lab/dylan/repos/scrna-seq/analysis-code/customFunctions.R")
 library(scProportionTest)
 library(UpSetR)
 
@@ -363,7 +363,7 @@ ggsave(paste("./output/", outName, "/",outName, "_fig3c.png", sep = ""), width =
 
 ### Fig 3d - gene sig comparing IL23R_gd_T1 to other T cells
 p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T1", idents.2 = NULL, bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, topn = c(10,10), labSize = 4,
-                        minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T1_VS_otherT", idents.1_NAME = "IL23R gd T1", idents.2_NAME = "other T cells", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24
+                        minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T1_VS_otherT", idents.1_NAME = "IL23R gd T1", idents.2_NAME = "other T cells", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24, strict_lfc = T
                     )
 
 p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL, 
@@ -389,7 +389,7 @@ ggsave(paste("./output/", outName,"/", outName, "_gd_il23r_T1_enriched_terms.png
 
 ### Fig 3e - gene sig comparing IL23R_gd_T2 to other T cells
 p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T2", idents.2 = NULL, bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, labSize = 4, topn = c(10,10),
-                        minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T2_VS_otherT", idents.1_NAME = "IL23R gd T2", idents.2_NAME = "other T cells", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24
+                        minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T2_VS_otherT", idents.1_NAME = "IL23R gd T2", idents.2_NAME = "other T cells", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24, strict_lfc = T
                     )
 
 p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL, 
@@ -434,8 +434,11 @@ dev.off()
 
 
 ### Fig extra - dge analysis IL23R_gd_T1 & IL23R_gd_T2 vs other T cells
-p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = c("IL23R_gd_T1", "IL23R_gd_T2"), idents.2 = NULL, bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, topn = c(10,10), labSize = 4,
-                        minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_VS_otherT", idents.1_NAME = "IL23R gd", idents.2_NAME = "other T cells", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24
+p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = c("IL23R_gd_T1", "IL23R_gd_T2"), idents.2 = NULL, bioRep = "name",
+                      padj_cutoff = 0.01, lfcCut = 1, topn = c(10,10), labSize = 4,
+                      minCells = 5, outDir = paste0("./output/", outName, "/"), 
+                      title = "IL23R_gd_VS_otherT", idents.1_NAME = "IL23R gd", idents.2_NAME = "other T cells", 
+                      returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24, strict_lfc = T
                     )
 
 p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL, 
@@ -452,13 +455,13 @@ ggsave(paste("./output/", outName, "/", outName, "_il23r_volcPlot.png", sep = ""
 
 ### Fig 3f - GSEA of dge results IL23R_gd_T1 & IL23R_gd_T2 vs other T cells
 degs.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/tcell/IL23R_gd_vs_other_T_cells_all_genes.csv")
-degs.df %>% filter(padj < 0.01) %>% mutate(rection = ifelse(log2FoldChange > 0, "UP", "DWN")) %>% group_by(rection) %>% summarize(cnts = n())
-up.genes <- degs.df %>% filter(padj < 0.01, log2FoldChange > 0) %>% pull(gene)
-p <- plotGSEA(geneList = up.genes, species = "equine", geneListDwn = NULL, category = "C5", upCol = "red", dwnCol = "blue", upOnly = T, termsTOplot = 30)
+degs.df %>% mutate(rection = ifelse(log2FoldChange > 0, "UP", "DWN")) %>% group_by(rection) %>% summarize(cnts = n())
+up.genes <- degs.df %>% filter(log2FoldChange > 0) %>% pull(gene)
+p <- plotGSEA(geneList = up.genes, species = "equine", geneListDwn = NULL, category = "C5", upCol = "red", dwnCol = "blue", upOnly = T, termsTOplot = 20, size = 3.75)
 
 pi <- p + theme(axis.title = element_text(size = 24),
                 axis.text = element_text(size = 18)
-               ) + scale_x_continuous(limits = c(-17,ceiling(max(p$data$x_axis)*1.05)), breaks = c(0,ceiling(max(p$data$x_axis)*1.05)),name = "-log10(p.adj)") + ggtitle("Gene ontology") + theme(plot.title = element_text(size = 28, hjust = 0.5))
+               ) + scale_x_continuous(limits = c(-17,ceiling(max(p$data$x_axis)*1.05)), breaks = c(0,ceiling(max(p$data$x_axis)*1.05)),name = "-log10(p.adj)") + labs(title = "Gene ontology", subtitle = "(IL23R gd T1/2 vs other T cells)") + theme(plot.title = element_text(size = 28, hjust = 0.5),  plot.subtitle = element_text(size = 18, hjust = 0.5))
 
 ggsave(paste("./output/", outName,"/", outName, "_fig3f.png", sep = ""), width = 7, height = 7)
 
