@@ -2,6 +2,7 @@
 
 #load custom functions & packages
 source("/pl/active/dow_lab/dylan/repos/scrna-seq/analysis-code/customFunctions.R")
+library(scProportionTest)
 
 ########################################
 ### BEGIN MYELOID DATA PREPROCESSING ###
@@ -42,7 +43,7 @@ seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = pas
                        )
 
 
-### During analysis several low qaulity clusters were identified and need to removed 
+### During analysis several low quality clusters were identified and need to removed 
 ### NOTE: a very small a cluster of fibroblasts was identified and is removed due to not belonging in this subset
 
 #load in previously processed data and load metadata
@@ -173,7 +174,7 @@ ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_inp
 colArray <- read.csv("./sf_idents_08-01-2023.csv")
 colArray.sub <- colArray[colArray$majorID == "myeloid",]
 
-### Fig 2a: Create UMAP by clusterID_sub
+### Fig 2a - Create UMAP by clusterID_sub
 pi <- DimPlot(seu.obj, 
               reduction = "umap", 
               group.by = "clusterID_sub",
@@ -182,30 +183,8 @@ pi <- DimPlot(seu.obj,
               label = T,
               label.box = T,
               shuffle = TRUE
-)
-p <- cusLabels(plot = pi, shape = 21, size = 10, textSize = 6, alpha = 0.8)  + NoLegend() + theme(axis.title = element_blank(),
-                                                                                  panel.border = element_blank(),
-                                                                                                  plot.margin = unit(c(-7, -7, -7, -7), "pt"))
-
-axes <- ggplot() + labs(x = "UMAP1", y = "UMAP2") + 
-theme(axis.line = element_line(colour = "black", 
-                               arrow = arrow(angle = 30, length = unit(0.1, "inches"),
-                                             ends = "last", type = "closed"),
-                              ),
-      axis.title.y = element_text(colour = "black", size = 20),
-      axis.title.x = element_text(colour = "black", size = 20),
-      panel.border = element_blank(),
-      panel.background = element_rect(fill = "transparent",colour = NA),
-      plot.background = element_rect(fill = "transparent",colour = NA),
-      panel.grid.major = element_blank(), 
-      panel.grid.minor = element_blank()
-     )
-
-p <- p + inset_element(axes,left= 0,
-  bottom = 0,
-  right = 0.25,
-  top = 0.25,
-                       align_to = "full")
+) + NoLegend()
+p <- cusLabels(plot = pi, shape = 21, size = 10, textSize = 6, alpha = 0.8, smallAxes = TRUE) 
 ggsave(paste0("./output/", outName, "/", outName, "_fig2a.png"), width = 7, height = 7)
 
 
@@ -237,7 +216,7 @@ p <- prettyFeats(seu.obj = seu.obj, nrow = 5, ncol =  3, features = features,
 ggsave(paste("./output/", outName, "/", outName, "_key_feats.png", sep = ""), width = 9, height = 15)
 
 
-### Fig 2b: Create violin plots for key feats
+### Fig 2b - Create violin plots for key feats
 features <- c("AIF1","DRA","ITGAX",
               "SELP", "CSF3R","SELL",
               "CXCL8","VCAN", "LYZ",
@@ -262,7 +241,7 @@ pi <- VlnPlot(object = seu.obj,
               fill.by = "ident",
               flip = T,
               features = rev(features)
-             ) & NoLegend() & theme(axis.ticks = element_blank(),
+             ) & NoLegend() & theme(axis.ticks.y = element_blank(),
                                     axis.text.y = element_blank(),
                                     axis.title.x = element_blank(),
                                     axis.title.y = element_text(size = 7),
@@ -270,10 +249,10 @@ pi <- VlnPlot(object = seu.obj,
                                     axis.line = element_blank(),
                                     strip.text.y.right = element_text(size = 7, hjust = 0)
                                    ) + theme(plot.margin = margin(c(3,0,0,10)))
-ggsave(paste("./output/", outName, "/", outName, "_fig2b.png", sep = ""), width = 3.75, height = 5)
+ggsave(paste("./output/", outName, "/", outName, "_fig2b.png", sep = ""), width = 4, height = 6)
 
 
-### Fig supp 2a  - M1 vs M2 signatures
+### Fig supp 2a - M1 vs M2 signatures
 #set and calc modules
 modulez <- list("Pro-inflammatory" = c("AZIN1", "CD38","CD86","CXCL10","FPR2","GPR18","IL12B","IL18","IRF5","NFKBIZ","NOS2","PTGS2","TLR4","TNF"),
                 "Anti-inflammatory" = c("ALOX15", "ARG1", "CHIL3", "CHIL4","EGR2", "IL10","IRF4","KLF4","MRC1","MYC","SOCS2","TGM2")
@@ -296,22 +275,19 @@ plots <- lapply(modulez, function(x){
                                      plot.margin = margin(3, 0, 3, 0, "pt")
                                     ) + scale_colour_viridis(option="magma", name='Average\nexpression', limits = c(-2.5,2.5)) + guides(size = guide_legend(nrow = 3))
 })
-
-    patch <- area()
-    nrow <- length(modulez)
-    ncol <- 1
-    counter=0
-    for (i in 1:nrow) {
-        for (x in 1:ncol) {
-                patch <- append(patch, area(t = i, l = x, b = i, r = x))
-        }
+patch <- area()
+nrow <- length(modulez)
+ncol <- 1
+counter=0
+for (i in 1:nrow) {
+    for (x in 1:ncol) {
+            patch <- append(patch, area(t = i, l = x, b = i, r = x))
     }
+}
 
 plots$`Enrichment score` <- plots$`Enrichment score` + theme(axis.text.x = element_text(angle = 45, vjust = 0, hjust = 0)) + scale_y_discrete(position = "right") + scale_colour_viridis() + guides(color = guide_colorbar(title = 'Module\nscore'), limits = c(-2.5,2.5))
-
 p <- Reduce( `+`, plots ) +  plot_layout(guides = "collect", design = patch, 
                                          height = unname(unlist(lapply(modulez, length)))/sum(unname(unlist(lapply(modulez, length)))))
-
 ggsave(paste("./output/", outName, "/", outName, "_supp2a.png", sep = ""), width = 6, height = 7)
 
 
@@ -356,7 +332,6 @@ ggsave(paste("./output/", outName, "/",outName, "_freqPlots_majorID_sub.png", se
 
 
 ### Fig 2c: monte-carlo permitation test
-library(scProportionTest)
 log2FD_threshold <- 0.58
 
 #method of downsampling profoundly impacts the intpretations -- rec down sample by name over cellSource
@@ -368,7 +343,6 @@ prop_test <- permutation_test( prop_test, cluster_identity = "majorID_sub", samp
 p <- permutation_plot(prop_test)  + theme(axis.title.y = element_blank(),
                                           legend.position = "top") + guides(colour = guide_legend("", nrow = 2, 
                                                                                                   byrow = TRUE)) + coord_flip()
-
 res.df <- prop_test@results$permutation
 res.df <- res.df %>% mutate(Significance = as.factor(ifelse(obs_log2FD < -log2FD_threshold & FDR < 0.01,"Down",
                                                             ifelse(obs_log2FD > log2FD_threshold & FDR < 0.01,"Up","n.s.")))
@@ -381,53 +355,46 @@ geom_pointrange(aes(ymin = boot_CI_2.5, ymax = boot_CI_97.5,
                                                                      lty = 2) + geom_hline(yintercept = -log2FD_threshold, 
                                                                                            lty = 2) + 
 geom_hline(yintercept = 0) + scale_color_manual(values = c("blue", "red","grey")
-                                               ) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size = 14),
+                                               ) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size = 12),
                                                          axis.title.x = element_blank(),
                                                          legend.position = "top",
                                                          plot.margin = margin(c(3,3,0,10))
                                                         ) + ylab("abundance change (log2FC)")
-
-
 ggsave(paste("./output/", outName, "/",outName, "_fig2c.png", sep = ""), width = 3.5, height = 2, scale = 2 )
 
 
 ### Fig supp 2c - genes that define skewed DCs
-p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "majorID_sub", idents.1 = "cDC2", idents.2 = "cDC1", bioRep = "name", padj_cutoff = 0.05, lfcCut = 0.58, 
-                        minCells = 5, outDir = paste0("./output/", outName, "/"), title = "cDC2_VS_cDC1", idents.1_NAME = "cDC2", idents.2_NAME = "cDC1", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24, topn = c(15,15), addLabs = ""
+p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "majorID_sub", idents.1 = "cDC2", idents.2 = "cDC1", bioRep = "name", padj_cutoff = 0.01, lfcCut = 1, strict_lfc = T,
+                        minCells = 5, outDir = paste0("./output/", outName, "/"), title = "cDC2_VS_cDC1", idents.1_NAME = "cDC2", idents.2_NAME = "cDC1", returnVolc = T, doLinDEG = F, paired = T, lowFilter = T, dwnSam = F, setSeed = 24, topn = c(15,15), addLabs = ""
                     )
-
-p  <- prettyVolc(plot = p_volc[[1]], rightLab = "Up in c0 (cDC2)", leftLab = "Up in c5 (cDC1)") + labs(x = "log2(FC) cDC2 vs cDC1") + NoLegend()
-
+p  <- prettyVolc(plot = p_volc[[1]], rightLab = "Up in c0 (cDC2)", leftLab = "Up in c5 (cDC1)", lfcCut = 1) + labs(x = "log2(FC) cDC2 vs cDC1") + NoLegend()
 ggsave(paste("./output/", outName, "/", outName, "_c0vc5_volcPlot.png", sep = ""), width = 7, height = 7)
 
 
-### Fig 2d: DGE using wilcoxon
+### Fig 2d: DGE using wilcoxon -- also generates a .csv that is supplemental data 6
 seu.obj$allCells <- "DGE analysis of myeloid cells"
 seu.obj$allCells <- as.factor(seu.obj$allCells)
 seu.obj$cellSource <- factor(seu.obj$cellSource, levels = c("OA", "Normal"))
 linDEG(seu.obj = seu.obj, groupBy = "allCells", comparision = "cellSource", outDir = paste0("./output/", outName,"/fig2d_"), 
-       outName = outName, labCutoff = 10, pValCutoff = 0.01, saveGeneList = T, addLabs = "CCL2"
+       outName = outName, labCutoff = 10, pValCutoff = 0.01, saveGeneList = T, addLabs = c("CCL2", "S100A12")
                   )
 
 
-### Fig supp 2d: run/plot gsea results
-dgea.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/myeloid/fig2d_myeloid_DGE analysis of myeloid cellsgeneList.csv")
+### Fig supp 2d - run/plot gsea results
+dgea.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/myeloid/fig2d_myeloid_DGE_analysis_of_myeloid_cells_geneList.csv")
 geneListUp <- dgea.df %>% arrange(p_val_adj) %>% filter(p_val_adj < 0.01, avg_log2FC > 0) %>% pull(X)
 geneListDwn <- dgea.df %>% arrange(p_val_adj) %>% filter(p_val_adj < 0.01, avg_log2FC < 0) %>% pull(X)
 
 p <- plotGSEA(geneList = geneListUp, geneListDwn = geneListDwn, category = "C5", upCol = "red", dwnCol = "blue", upOnly = T, termsTOplot=35, trimTerm = T)+ theme(axis.title = element_text(size = 16))
-
-pi <- p + scale_x_continuous(limits = c(-50,ceiling(max(p$data$x_axis)*1.05)), breaks = c(0,ceiling(max(p$data$x_axis)*1.05)/2,ceiling(max(p$data$x_axis)*1.05)),name = "-log10(p.adj)") + ggtitle("Gene ontology") + theme(plot.title = element_text(size = 20, hjust = 0.5))
-
+pi <- p + scale_x_continuous(limits = c(-50,ceiling(max(p$data$x_axis)*1.05)), 
+                             breaks = c(0, ceiling(max(p$data$x_axis)*1.05)/2, ceiling(max(p$data$x_axis)*1.05)),
+                             name = "-log10(p.adj)") + ggtitle("Gene ontology") + theme(plot.title = element_text(size = 20, hjust = 0.5))
 ggsave(paste0("./output/", outName, "/", outName, "_supp2d.png"), width = 7.5, height = 9)
 
 
-
-
+### Fig supp 2e - use enrichment scoring to identify which cells are enriched in the GSEA terms
 enriched <- pi$data
-
 enriched <- enriched %>% mutate(labz = ifelse(grepl("MIGRATION|CHEMOTAXIS|ACTIVATION",Description),Description,NA))
-
 enriched$geneID <- as.list(strsplit(enriched$geneID, "/"))
 modulez <- enriched[!is.na(enriched$labz),]$geneID 
 
@@ -447,19 +414,10 @@ features <- names(modulez)
 ecScores <- majorDot(seu.obj = seu.obj, groupBy = "majorID_sub", scale = T,
                      features = features
                     ) + theme(axis.title = element_blank(),
-                              #axis.ticks = element_blank(),
-                              #legend.justification = "left",
-                              #plot.margin = margin(7, 21, 7, 7, "pt")
                               legend.direction = "vertical",
                               legend.position = "right"
-                             ) + guides(color = guide_colorbar(title = 'Scaled\nenrichment\nscore')) + guides(size = guide_legend(nrow = 3, byrow = F, title = 'Percent\nenriched'))
-
-ggsave(paste("./output/", outName, "/", outName, "_supp2e.png", sep = ""), width = 7, height = 7)
-
-
-
-
-
+                             ) + guides(color = guide_colorbar(title = 'Scaled\nenrichment\nscore')) + guides(size = guide_legend(nrow = 3, byrow = F, title = 'Percent\nenriched')) + coord_flip()
+ggsave(paste("./output/", outName, "/", outName, "_supp2e.png", sep = ""), width = 9, height = 5)
 
 
 ### Fig supp 2e - plot enrichment scores for gsea terms by cell type
@@ -492,11 +450,7 @@ ecScores <- majorDot(seu.obj = seu.obj, groupBy = "majorID_sub", scale = T,
 ggsave(paste("./output/", outName, "/", outName, "_",term,"_dots_celltypes.png", sep = ""),width = 10,height=10)
 
 
-
-
-
-
-### Fig 2e: split feature plots highlighting key degs
+### Fig 2e - split feature plots highlighting key degs
 set.seed(12)
 Idents(seu.obj) <- "cellSource"
 seu.obj.sub <- subset(seu.obj, downsample = min(table(seu.obj$cellSource)))
