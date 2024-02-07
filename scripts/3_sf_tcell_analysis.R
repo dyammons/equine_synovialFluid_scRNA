@@ -187,10 +187,10 @@ p <- prettyFeats(seu.obj = seu.obj, pt.size = 0.00000001, nrow = 4, ncol = 4, ti
 ggsave(paste("./output/", outName, "/", outName, "_fig3b.png", sep = ""), width = 12, height = 12)
 
 
-### Fig supp: Plot key feats
+### Fig supp 3b: Plot key feats
 features <-  c("CD4","CD8A")
-p <- prettyFeats(seu.obj = seu.obj, pt.size = 0.00000001, nrow = 1, ncol = 2, title.size = 12, features = features, order = F, noLegend = T) 
-ggsave(paste("./output/", outName, "/", outName, "_feat_CD4_CD8.png", sep = ""), width = 6, height = 3)
+p <- prettyFeats(seu.obj = seu.obj, pt.size = 0.00000001, nrow = 2, ncol = 1, title.size = 12, features = features, order = F, noLegend = T) 
+ggsave(paste("./output/", outName, "/", outName, "_feat_CD4_CD8.png", sep = ""), width = 3, height = 6)
 
 
 ### Fig extra: Create violin plots for key feats
@@ -212,14 +212,6 @@ pi <- VlnPlot(object = seu.obj,
                                     axis.title.x = element_blank()
                                    )
 ggsave(paste("./output/", outName, "/", outName, "_selectViln.png", sep = ""), width = 5, height =6)
-
-
-### Fig extra: generate dot plots with key features determined using findallmarkers
-p <- autoDot(seu.integrated.obj = seu.obj, inFile = "./output/viln/tcell/Aug_10_2023_tcell_gene_list.csv", groupBy = "clusterID_sub",
-                     MIN_LOGFOLD_CHANGE = 0.5, MIN_PCT_CELLS_EXPR_GENE = 0.1,
-                    filterTerm = "^ENS"
-                    )
-ggsave(paste("./output/", outName,"/",outName, "_autoDot.png", sep = ""), width = 9, height = 15)
 
 
 ### Fig extra: make dot plots of key features
@@ -287,13 +279,13 @@ table(seu.obj$predicted.id,seu.obj$celltype.l2)
 
 ### Fig supp 3c - dge analysis IL23R_gd_T2 vs IL23R_gd_T1
 p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T2", idents.2 = "IL23R_gd_T1", 
-                      bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, labSize = 4,
+                      bioRep = "name",padj_cutoff = 0.01, lfcCut = 1, labSize = 4, strict_lfc = T, 
                       minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T2_VS_IL23R_gd_T1", 
                       idents.1_NAME = "IL23R gd T2", idents.2_NAME = "IL23R gd T1", returnVolc = T, 
                       doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24
                     )
 
-p  <- prettyVolc(plot = p_volc[[1]], rightLab = "IL23R gd T2", 
+p  <- prettyVolc(plot = p_volc[[1]], rightLab = "IL23R gd T2", lfcCut = 1,
                  leftLab = "IL23R gd T1", arrowz = T) + labs(x = "log2(FC)") + theme(axis.title = element_text(size = 24),
                                                                                      axis.text = element_text(size = 18),
                                                                                      plot.title = element_blank(),
@@ -305,11 +297,10 @@ ggsave(paste("./output/", outName, "/", outName, "_supp3c.png", sep = ""), width
 
 ### Fig supp 3d - Evlauate cell frequency by cluster
 freqy <- freqPlots(seu.obj, method = 1, nrow = 3, groupBy = "celltype.l2", comp = "cellSource", legTitle = "Cell source", refVal = "name", showPval = T,
-              namez = levels(seu.obj$name), 
-              colz = levels(seu.obj$colz)
-              )
-
-ggsave(paste("./output/", outName, "/",outName, "_supp3d.png", sep = ""), width = 4, height = 2.5, scale = 2)
+              namez = "name", 
+              colz = "colz"
+              ) + NoLegend()
+ggsave(paste("./output/", outName, "/",outName, "_supp3d.png", sep = ""), width = 6, height = 5)
 
 
 ### Fig supp 3e - umap by sample
@@ -324,7 +315,12 @@ pi <- DimPlot(seu.obj.ds,
               label = FALSE,
               shuffle = TRUE
 )
-p <- formatUMAP(pi) + NoLegend()
+p <- formatUMAP(pi) + theme(axis.title = element_blank(),
+                             panel.border = element_blank(),
+                             plot.margin = unit(c(-7, -7, -7, -7), "pt"),
+                            legend.justification="center",
+                            legend.position = "top"
+                            ) + guides(color = guide_legend(nrow = 1, override.aes = list(size = 5)))
 ggsave(paste("./output/", outName, "/", outName, "_supp3e.png", sep = ""), width = 7, height = 7)
 
 
@@ -361,11 +357,11 @@ ggsave(paste("./output/", outName, "/",outName, "_fig3c.png", sep = ""), width =
 
 
 ### Fig 3d - gene sig comparing IL23R_gd_T1 to other T cells
-p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T1", idents.2 = NULL, bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, topn = c(10,10), labSize = 4,
+p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T1", idents.2 = NULL, bioRep = "name",padj_cutoff = 0.01, lfcCut = 1, topn = c(10,10), labSize = 4,
                         minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T1_VS_otherT", idents.1_NAME = "IL23R gd T1", idents.2_NAME = "other T cells", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24, strict_lfc = T
                     )
 
-p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL, 
+p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL, lfcCut = 1,
                  leftLab = NULL, arrowz = F) + labs(x = "log2(FC)") + theme(axis.title = element_text(size = 24),
                                                                                                       axis.text = element_text(size = 18),
                                                                                                       plot.title = element_text(size = 28),
@@ -379,19 +375,19 @@ ggsave(paste("./output/", outName, "/", outName, "_fig3d.png", sep = ""), width 
 
 ### Fig extra - GSEA of gene sig comparing IL23R_gd_T1 to other T cells
 degs.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/tcell/IL23R_gd_T1_vs_other_T_cells_all_genes.csv")
-degs.df %>% filter(padj < 0.05) %>% mutate(rection = ifelse(log2FoldChange > 0, "UP", "DWN")) %>% group_by(rection) %>% summarize(cnts = n())
-up.genes <- degs.df %>% filter(padj < 0.05, log2FoldChange > 0) %>% pull(gene)
+degs.df %>% mutate(rection = ifelse(log2FoldChange > 0, "UP", "DWN")) %>% group_by(rection) %>% summarize(cnts = n())
+up.genes <- degs.df %>% filter(log2FoldChange > 0) %>% pull(gene)
 p <- plotGSEA(geneList = up.genes, species = "equine", geneListDwn = NULL, category = "C5", upCol = "red", dwnCol = "blue", upOnly = T, termsTOplot=1000)
 pi <- p + theme(axis.title=element_text(size = 16)) + scale_x_continuous(limits = c(-10,ceiling(max(p$data$x_axis)*1.05)), breaks = c(0,ceiling(max(p$data$x_axis)*1.05)/2,ceiling(max(p$data$x_axis)*1.05)),name = "log10(p.adj)") + ggtitle("Gene ontology") + theme(plot.title = element_text(size = 20, hjust = 0.5))
 ggsave(paste("./output/", outName,"/", outName, "_gd_il23r_T1_enriched_terms.png", sep = ""), width = 7, height =7)
 
 
 ### Fig 3e - gene sig comparing IL23R_gd_T2 to other T cells
-p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T2", idents.2 = NULL, bioRep = "name",padj_cutoff = 0.05, lfcCut = 0.58, labSize = 4, topn = c(10,10),
+p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = "IL23R_gd_T2", idents.2 = NULL, bioRep = "name",padj_cutoff = 0.01, lfcCut = 1, labSize = 4, topn = c(10,10),
                         minCells = 5, outDir = paste0("./output/", outName, "/"), title = "IL23R_gd_T2_VS_otherT", idents.1_NAME = "IL23R gd T2", idents.2_NAME = "other T cells", returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24, strict_lfc = T
                     )
 
-p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL, 
+p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL, lfcCut = 1,
                  leftLab = NULL, arrowz = F) + labs(x = "log2(FC)") + theme(axis.title = element_text(size = 24),
                                                                                                       axis.text = element_text(size = 18),
                                                                                                       plot.title = element_text(size = 28),
@@ -405,15 +401,14 @@ ggsave(paste("./output/", outName, "/", outName, "_fig3e.png", sep = ""), width 
 
 ### Fig extra - GSEA of gene sig comparing IL23R_gd_T2 to other T cells
 degs.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/tcell/IL23R_gd_T2_vs_other_T_cells_all_genes.csv")
-degs.df %>% filter(padj < 0.05) %>% mutate(rection = ifelse(log2FoldChange > 0, "UP", "DWN")) %>% group_by(rection) %>% summarize(cnts = n())
-up.genes <- degs.df %>% filter(padj < 0.05, log2FoldChange > 0) %>% pull(gene)
+degs.df %>% mutate(rection = ifelse(log2FoldChange > 0, "UP", "DWN")) %>% group_by(rection) %>% summarize(cnts = n())
+up.genes <- degs.df %>% filter(log2FoldChange > 0) %>% pull(gene)
 p <- plotGSEA(geneList = up.genes, geneListDwn = NULL, species = "equine", category = "C5", upCol = "red", dwnCol = "blue", upOnly = T, termsTOplot=1000)
 pi <- p + theme(axis.title=element_text(size = 16)) + scale_x_continuous(limits = c(-10,ceiling(max(p$data$x_axis)*1.05)), breaks = c(0,ceiling(max(p$data$x_axis)*1.05)/2,ceiling(max(p$data$x_axis)*1.05)),name = "log10(p.adj)") + ggtitle("Gene ontology") + theme(plot.title = element_text(size = 20, hjust = 0.5))
 ggsave(paste("./output/", outName,"/", outName, "_gd_il23r_T2_enriched_terms.png", sep = ""), width = 7, height =7)
 
 
 ### Fig supp 3f - upset plot of gd T cell gene signature overlap
-
 #load in dge results
 IL23R_gd_T1.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/tcell/IL23R_gd_T1_vs_other_T_cells_all_genes.csv")
 IL23R_gd_T2.df <- read.csv("/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/output/tcell/IL23R_gd_T2_vs_other_T_cells_all_genes.csv")
@@ -440,7 +435,7 @@ p_volc <- btwnClusDEG(seu.obj = seu.obj, groupBy = "celltype.l2", idents.1 = c("
                       returnVolc = T, doLinDEG = F, paired = T, addLabs = NULL, lowFilter = T, dwnSam = F, setSeed = 24, strict_lfc = T
                     )
 
-p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL, 
+p  <- prettyVolc(plot = p_volc[[1]], rightLab = NULL, lfcCut = 1,
                  leftLab = NULL, arrowz = F) + labs(x = "log2(FC)") + theme(axis.title = element_text(size = 24),
                                                                                                       axis.text = element_text(size = 18),
                                                                                                       plot.title = element_text(size = 28),
