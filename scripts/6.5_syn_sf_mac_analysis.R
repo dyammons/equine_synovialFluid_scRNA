@@ -3,6 +3,9 @@
 #load custom functions & packages
 source("/pl/active/dow_lab/dylan/repos/scrna-seq/analysis-code/customFunctions.R")
 
+###########################################
+### BEGIN cross tissue myeloid analysis ###
+###########################################
 
 ### Load in synovium data -- subset on macrophage
 seu.obj <- readRDS("./output/s3/230929_rngr612_noMods_res0.7_dims50_dist0.2_neigh25_S3.rds")
@@ -105,6 +108,7 @@ seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = pas
                                      "CD4", "MS4A1", "PPBP","HBM")
                        )
 
+#load in the integrated dataset
 seu.obj <- readRDS("./output/s3/Nov_22_2023_mac_2500_res0.6_dims40_dist0.3_neigh30_S3.rds")
 
 
@@ -234,7 +238,7 @@ p <- ggplot(res.df, aes(x = Freq, y = Var1, fill = Var2)) +
                   legend.text = element_text(size= 12),
                   legend.position = "top",
                   legend.direction = "horizontal",
-                  plot.title = element_blank(),
+                  plot.title = element_text(size= 14),
                   axis.line = element_line(colour = "black"),
                   legend.key.size = unit(1,"line"),
                   axis.title.x = element_text(size = 18),
@@ -245,7 +249,7 @@ p <- ggplot(res.df, aes(x = Freq, y = Var1, fill = Var2)) +
             scale_y_discrete(expand = c(0, 0)) +
             scale_x_continuous(expand = c(0,0)) + 
             xlab(label = "Number of cells") + 
-            guides(fill = guide_legend(nrow = 1)) + scale_fill_manual(values="grey") + NoLegend()
+            guides(fill = guide_legend(nrow = 1)) + scale_fill_manual(values="grey") + NoLegend() + ggtitle("Myeloid cell counts by cluster in synovium")
 
 ggsave(p, file = paste0("./output/", outName, "/", subName, "_suppfig5.png"), height = 7, width = 7)
 
@@ -286,3 +290,7 @@ geom_hline(yintercept = 0) + scale_color_manual(values = c("blue", "red","grey")
 
 
 ggsave(paste("./output/", outName, "/",outName, "_propTest_clusterID-wDS.png", sep = ""), width = 6, height = 3)
+
+#########################################
+### END cross tissue myeloid analysis ###
+#########################################

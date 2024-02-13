@@ -172,3 +172,6 @@ geom_hline(yintercept = 0) + scale_color_manual(values = c("blue", "red","grey")
 ggsave(paste("./output/", outName, "/",outName, "_fig2c.png", sep = ""), width = 3.5, height = 2, scale = 2 )
 
 
+##################################
+### END ALL CELL DATA ANALYSIS ###
+##################################

@@ -134,12 +134,12 @@ ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_inp
 pi <- DimPlot(seu.obj, 
               reduction = "umap", 
               group.by = "clusterID_sub",
-#               cols = colz.base,
+              cols = colz.base <- c("#00C1A7","#00A6FF","#00BADE", "#00B5ED", "#00C0BB", "#619CFF"),
               pt.size = 0.25,
               label = TRUE,
               label.box = TRUE,
               repel = TRUE
- )
+ ) + NoLegend()
 p <- cusLabels(plot = pi, shape = 21, size = 10, textSize = 6, alpha = 0.8, smallAxes = T)
 ggsave(paste("./output/", outName, "/", outName, "_supp5a.png", sep = ""), width = 7, height = 7)
 
@@ -147,7 +147,7 @@ ggsave(paste("./output/", outName, "/", outName, "_supp5a.png", sep = ""), width
 ### Fig supp 5b: dot plot of key features that define synoviocytes
 p <- autoDot(seu.integrated.obj = seu.obj, inFile = "./output/viln/syn/eqsyn_n1_n1_gene_list.csv", groupBy = "clusterID_sub",
                      MIN_LOGFOLD_CHANGE = 0.5, MIN_PCT_CELLS_EXPR_GENE = 0.1
-                    )
+                    ) + scale_fill_manual(values=c("0" = "#00C1A7","1" = "#00A6FF", "2" = "#00BADE", "3" = "#00B5ED", "4" = "#00C0BB", "5" = "#619CFF"))
 ggsave(paste("./output/", outName, "/", outName, "_supp5b.png", sep = ""), width = 8, height = 9)
 
 

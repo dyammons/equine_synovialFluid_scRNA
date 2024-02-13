@@ -6,6 +6,10 @@ library(CellChat)
 outName <- "cellchat"
 subName <- "syn"
 
+##############################
+### CELLCHAT PREPROCESSING ###
+##############################
+
 ### Load final data
 seu.obj <- readRDS("./output/s3/231220_rngr612_noMods_res0.7_dims50_dist0.2_neigh25_S3.rds")
 outName <- "allCells_syn"
@@ -100,6 +104,15 @@ cellchat <- aggregateNet(cellchat)
 saveRDS(cellchat, "./output/cellchat/cellChatobj_norm_finalClusters_231228.rds")
 # saveRDS(cellchat, "./output/cellchat/cellChatobj_norm_clusID.rds")
 
+
+##################################
+### END CELLCHAT PREPROCESSING ###
+##################################
+
+
+###############################
+### BEGIN CELLCHAT ANALYSIS ###
+###############################
 
 
 #### do the comparision analysis  --- this analysis may be confounded by differences in filter btwn tx and naive samples
@@ -399,9 +412,6 @@ pi <- VlnPlot(
 ggsave(paste("./output/", outName, "/", subName ,"supp7c.png", sep = ""), height = 3, width = 6)
 
 
-
-
-
-
-
-
+#############################
+### END CELLCHAT ANALYSIS ###
+#############################
