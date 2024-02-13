@@ -90,6 +90,7 @@ seu.obj <- loadMeta(seu.obj = seu.obj, metaFile = "./refColz.csv", groupBy = "or
 sorted_labels <- sort(unique(seu.obj$name))
 seu.obj$name <- factor(seu.obj$name, levels = sorted_labels)
 seu.obj <- loadMeta(seu.obj = seu.obj, metaFile = "./refColz.csv", groupBy = "orig.ident", metaAdd = "colz")
+seu.obj$colz <- factor(seu.obj$colz)
 
 
 ### Complete independent reclustering on annotated & subset dataset
@@ -129,6 +130,7 @@ seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = pas
 seu.obj <- readRDS("./output/s3/Dec_19_2023_allCells_2500_res0.7_dims40_dist0.3_neigh30_S3.rds")
 tc.df <- read.csv("sf_idents_tcell_12-05-2023.csv")
 mye.df <- read.csv("sf_idents_myeloid_12-05-2023.csv")
+outName <- "allCells"
 
 #fix annotation error
 Idents(seu.obj) <- "celltype.l1"
@@ -147,13 +149,13 @@ table(Idents(seu.obj))
 seu.obj$clusterID_major <- Idents(seu.obj)
 
 
-### Data supplemental - generate violin plots of defining features
+### Data supplemental 1 - generate violin plots of defining features
 vilnPlots(seu.obj = seu.obj, groupBy = "celltype.l1", numOfFeats = 24, outName = "supplemental_data_1", returnViln = F, 
           outDir = "./output/supplementalData/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
           assay = "RNA", min.pct = 0.25, only.pos = T)
 
 
-### Data supplemental - generate violin plots of defining features
+### Data supplemental 2 - generate violin plots of defining features
 vilnPlots(seu.obj = seu.obj, groupBy = "celltype.l2", numOfFeats = 24, outName = "supplemental_data_2", returnViln = F, 
           outDir = "./output/supplementalData/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
           assay = "RNA", min.pct = 0.25, only.pos = T)
@@ -249,10 +251,53 @@ scale_fill_manual(labels = levels(seu.obj$name),
 ggsave(paste("./output/", outName, "/", outName, "_fig1c.png", sep = ""), width =7, height = 5)
 
 
-### Fig 1d/e - stacked bar graph by colorID
 
+### Fig supp 1b: Evaluate cell frequency by cluster using monte carlo permutation
+log2FD_threshold <- 0.58
+Idents(seu.obj) <- "name"
+set.seed(12)
+seu.obj.sub <- subset(x = seu.obj, downsample = min(table(seu.obj$name)))
+prop_test <- sc_utils(seu.obj.sub)
+prop_test <- permutation_test( prop_test, cluster_identity = "celltype.l1", sample_1 = "Normal", sample_2 = "OA", sample_identity = "cellSource" )
+
+p <- permutation_plot(prop_test)  + theme(axis.title.y = element_blank(),
+                                          legend.position = "top") + guides(colour = guide_legend("", nrow = 2, 
+                                                                                                  byrow = TRUE)) + coord_flip()
+res.df <- prop_test@results$permutation
+res.df <- res.df %>% mutate(Significance = as.factor(ifelse(obs_log2FD < -log2FD_threshold & FDR < 0.01,"Down",
+                                                            ifelse(obs_log2FD > log2FD_threshold & FDR < 0.01,"Up","n.s.")))
+                           ) %>% arrange(obs_log2FD)
+
+res.df$clusters <- factor(res.df$clusters, levels = c(res.df$clusters))
+p <- ggplot(res.df, aes(x = clusters, y = obs_log2FD)) + 
+geom_pointrange(aes(ymin = boot_CI_2.5, ymax = boot_CI_97.5, 
+                    color = Significance)) + theme_bw() + geom_hline(yintercept = log2FD_threshold, 
+                                                                     lty = 2) + geom_hline(yintercept = -log2FD_threshold, 
+                                                                                           lty = 2) + 
+geom_hline(yintercept = 0) + scale_color_manual(values = c("blue", "red","grey")
+                                               ) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size = 14),
+                                                         axis.title.x = element_blank(),
+                                                         legend.position = "top",
+                                                         plot.margin = margin(c(3,3,0,24))
+                                                        ) + ylab("abundance change (log2FC)")
+
+ggsave(paste("./output/", outName, "/",outName, "_fig3c.png", sep = ""), width = 3.5, height = 2, scale = 2 )
+
+
+
+### Fig supp 1c - Evlauate cell frequency by cluster
+freqy <- freqPlots(seu.obj, method = 1, nrow = 1, groupBy = "celltype.l1", comp = "cellSource", legTitle = "Cell source", refVal = "name", showPval = T,
+              namez = "name", 
+              colz = "colz"
+              ) + NoLegend()
+
+ggsave(paste("./output/", outName, "/",outName, "_supp3d.png", sep = ""), width = 12, height = 3)
+
+
+### Fig 1d/e - DEG heatmap and scatter plot of DEGs in each major subset
+seu.obj$celltype.l1 <- factor(gsub("_", " ", seu.obj$celltype.l1))
 #complete dge analysis within each major subset
-linDEG(seu.obj = seu.obj, threshold = 1, thresLine = F, groupBy = "celltype.l1", comparision = "cellSource", outDir = paste0("./output/", outName,"/linDEG/"), outName = "allCells", cluster = NULL, labCutoff = 10, noTitle = F, labsHide = "^ENSECAG", contrast = c("OA", "Normal"),
+linDEG(seu.obj = seu.obj, groupBy = "celltype.l1", comparision = "cellSource", outDir = paste0("./output/", outName,"/linDEG/"), outName = "allCells", cluster = NULL, labCutoff = 10, noTitle = F, labsHide = "^ENSECAG", contrast = c("OA", "Normal"),
                    colUp = "red", colDwn = "blue", subtitle = T, returnUpList = F, returnDwnList = F, forceReturn = F, useLineThreshold = F, pValCutoff = 0.01, saveGeneList = T, returnPlots = F
                   )
 
@@ -283,6 +328,9 @@ files <- list.files(path = "/pl/active/dow_lab/dylan/eq_synovial_scRNA/analysis/
 
 df.list <- lapply(files, read.csv, header = T)
 df <- bind_rows(df.list, .id = "column_label")
+df2 <- do.call(rbind, df.list) %>% mutate(contrast = "OA_vs_Normal")
+colnames(df2)[1] <- "gene"
+write.csv(df2, "./output/supplementalData/supplemental_data_3_gene_list.csv", row.names = F)
 df.res <- df %>% group_by(cellType) %>% summarize(cnts = n()) %>% as.data.frame()
 df.res <- df.res[match(levels(seu.obj$celltype.l1), df.res$cellType), ]
 df.res$cellType <- gsub("_", " ", df.res$cellType)
