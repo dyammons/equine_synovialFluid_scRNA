@@ -245,6 +245,47 @@ cusHeat
 dev.off()
 
 
+long.df <- melt(gg2@matrix)
+colnames(long.df) <- c("source", "target", "strength")
+
+other <- "Cycling_cells"
+lymphoid <- c("Activated_CD4","B_cell","CX3CR1_T","DAPL1_CD8","Effector_CD8","GNLY_T","GZMA_gd_T","IFN-T","IL23R_gd_T1","IL23R_gd_T2","KLRD1_T","SELL_CD4","Treg")
+myeloid <- c("CCL2_Macrophage","CD5L_Macrophage","cDC1","cDC2","cycling_DC","GPNMB_Macrophage","migDC","Mo-Mac","Monocyte","Neutrophil","pDC","TPPP3_Macrophage")
+
+long.df %>% mutate(intTerm = case_when(source %in% myeloid & target %in% myeloid ~ "mm",
+                                       source %in% lymphoid & target %in% myeloid ~ "ml",
+                                       source %in% myeloid & target %in% lymphoid ~ "ml",
+                                       source %in% lymphoid & target %in% lymphoid ~ "ll"
+                                      )
+                  ) %>% na.omit() %>% group_by(intTerm) %>% summarize(avg = mean(strength),
+                                                                      std = sd(strength),
+                                                                      MIN = min(strength),
+                                                                      MAX = max(strength),
+                                                                      MED = median(strength))
+
+
+gg2 <- netVisual_heatmap(cellchat, measure = "count",
+                         cluster.rows = F,
+                         cluster.cols = F, color.use = colz.base)
+
+long.df <- melt(gg2@matrix)
+colnames(long.df) <- c("source", "target", "count")
+
+other <- "Cycling_cells"
+lymphoid <- c("Activated_CD4","B_cell","CX3CR1_T","DAPL1_CD8","Effector_CD8","GNLY_T","GZMA_gd_T","IFN-T","IL23R_gd_T1","IL23R_gd_T2","KLRD1_T","SELL_CD4","Treg")
+myeloid <- c("CCL2_Macrophage","CD5L_Macrophage","cDC1","cDC2","cycling_DC","GPNMB_Macrophage","migDC","Mo-Mac","Monocyte","Neutrophil","pDC","TPPP3_Macrophage")
+
+long.df %>% mutate(intTerm = case_when(source %in% myeloid & target %in% myeloid ~ "mm",
+                                       source %in% lymphoid & target %in% myeloid ~ "ml",
+                                       source %in% myeloid & target %in% lymphoid ~ "ml",
+                                       source %in% lymphoid & target %in% lymphoid ~ "ll"
+                                      )
+                  ) %>% na.omit() %>% group_by(intTerm) %>% summarize(avg = mean(count),
+                                                                      std = sd(count),
+                                                                      MIN = min(count),
+                                                                      MAX = max(count),
+                                                                      MED = median(count))
+
 ### Fig supp - plot myeloid-myeloid specific chaanges
 
 ### Run cell chat on oa samples
