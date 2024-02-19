@@ -1,5 +1,8 @@
 # equine_synovialFluid_scRNA
 
+[![DOI](https://zenodo.org/badge/635774225.svg)](https://zenodo.org/doi/10.5281/zenodo.10680754)
+
+
 This GitHub repository contains all the analysis code used in, "Characterization of single cell transcriptomic responses to osteoarthritis in a naturally occurring equine model."
 
 The manuscript is currently under review and the GitHub page will be finalized by the time of publication.
