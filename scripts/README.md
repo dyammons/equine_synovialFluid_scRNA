@@ -7,7 +7,7 @@ The alignment code is currently not provided, but can be shared if desired. If y
 ### To complete a reproducible run from cellranger output count matricies:
 Download the supplementary zip folder on the NCBI GEO project page as decribed in [:file\_folder: input](/input) directory.
 In addition to the count matrices you will also need the .csv files located in the [:file\_folder: sheets](/input/sheets) directory.
-Once all files are in place, you will need the scripts provided in this directory which contain the analysis code (generally split by major analysis step) and you will have to source [customFunctions.R](/analysis/customFunctions.R) to load in the custom functions used in this project.
+Once all files are in place, you can use the provided scripts (generally split by major analysis step) and the source file [customFunctions.R](/analysis/customFunctions.R) to explore the analysis approach.
 
 NOTE: the file paths in the indivdual scripts will may need to be modified when reading/writing data to run on your system.
 

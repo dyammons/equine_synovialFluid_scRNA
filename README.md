@@ -15,7 +15,7 @@ If you have any questions or concerns, please submit an issue, contact the corre
 
 ## File structure:
 - [:file\_folder: input](/input) instructions for obtaining data associated with this study
-- [:file\_folder: analysis](/analysis) contains the analysis code and source file used to complete the data analysis
+- [:file\_folder: scripts](/scripts) contains the analysis code and source file used to complete the data analysis
 
 ## Supplemental data and potential uses:
 1. [Browse the data](#1-browse-the-complete-annotated-dataset)
