@@ -136,15 +136,38 @@ object.list[[1]] <- netAnalysis_computeCentrality(object.list[[1]], slot.name = 
 object.list[[2]] <- netAnalysis_computeCentrality(object.list[[2]], slot.name = "netP") 
 cellchat <- mergeCellChat(object.list, add.names = names(object.list))
 
-outfile <- paste0("./output/", outName, "/", subName, "/cellchat_oaVn_int.png")
-gg1 <- compareInteractions(cellchat, show.legend = F, group = c(1,2)) + 
+outfile <- paste0("./output/", outName, "/", subName, "/cellchat_oaVn_int_count.png")
+data.df <- compareInteractions(cellchat, show.legend = F)$data
+
+data.df$Dataset <- factor(data.df$dataset, levels = c("OA", "Normal"))
+p <- ggplot(data.df, aes(x=count, y=Dataset, fill=dataset)) + geom_bar(stat="identity") + theme_void() + 
     theme(title = element_blank(),
           axis.line = element_line(colour = "black"),
-          axis.title = element_text(size = 20),
-          axis.text = element_text(size = 16)
-    ) + scale_fill_manual(values=c("mediumseagreen","mediumpurple1")) + coord_flip()
-ggsave(outfile, height=2,width=6)
+          axis.title = element_text(size = 18),
+          axis.title.y = element_blank(),
+          axis.ticks = element_line(colour = "black"),
+          axis.text = element_text(size = 16, hjust = 1),
+          axis.text.y = element_text(margin = margin(t = 0, r = 7, b = 0, l = 0)),
+          plot.margin = margin(4, 14, 4,4)
+    ) + scale_fill_manual(values=c("mediumseagreen","mediumpurple1"))  + scale_y_discrete(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) + NoLegend() + xlab("Number of inferred interactions")
+ggsave(outfile, height = 1, width = 6)
 
+
+outfile <- paste0("./output/", outName, "/", subName, "/cellchat_oaVn_int_weight.png")
+data.df <- compareInteractions(cellchat, measure = "weight", show.legend = F)$data
+
+data.df$Dataset <- factor(data.df$dataset, levels = c("OA", "Normal"))
+p <- ggplot(data.df, aes(x=count, y=Dataset, fill=dataset)) + geom_bar(stat="identity") + theme_void() + 
+    theme(title = element_blank(),
+          axis.line = element_line(colour = "black"),
+          axis.title = element_text(size = 18),
+          axis.title.y = element_blank(),
+          axis.ticks = element_line(colour = "black"),
+          axis.text = element_text(size = 16, hjust = 1),
+          axis.text.y = element_text(margin = margin(t = 0, r = 7, b = 0, l = 0)),
+          plot.margin = margin(4, 14, 4,4)
+    ) + scale_fill_manual(values=c("mediumseagreen","mediumpurple1"))  + scale_y_discrete(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) + NoLegend() + xlab("Interaction strength")
+ggsave(outfile, height = 1, width = 6)
 
 #create heatmap using CellChat built-in function
 gg2 <- netVisual_heatmap(cellchat, measure = "weight",

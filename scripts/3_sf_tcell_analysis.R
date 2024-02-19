@@ -117,6 +117,11 @@ vilnPlots(seu.obj = seu.obj, groupBy = "celltype.l2", numOfFeats = 24, outName =
           outDir = "./output/supplementalData/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
           assay = "RNA", min.pct = 0.25, only.pos = T)
 
+### Export data to make supplemental table 4
+df <- read.csv("./output/supplementalData/supplemental_data_7_gene_list.csv")
+df <- df[ ,c("cluster","gene")] %>% group_by(cluster) %>% mutate(rowNum = row_number()) %>% filter(rowNum <= 25) %>% ungroup()
+df <- spread(df, key = rowNum, value = gene)
+write.csv(df, "./output/supplementalData/supplemental_table_base.csv", row.names = F)
 
 ### Data supplemental - export data for cell browser
 ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_input/", 

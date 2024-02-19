@@ -376,7 +376,8 @@ seu.obj$allCells <- "DGE analysis of myeloid cells"
 seu.obj$allCells <- as.factor(seu.obj$allCells)
 seu.obj$cellSource <- factor(seu.obj$cellSource, levels = c("OA", "Normal"))
 linDEG(seu.obj = seu.obj, groupBy = "allCells", comparision = "cellSource", outDir = paste0("./output/", outName,"/fig2d_"), 
-       outName = outName, labCutoff = 10, pValCutoff = 0.01, saveGeneList = T, addLabs = c("CCL2", "S100A12")
+       outName = outName, labCutoff = 10, saveGeneList = T, addLabs = c("CCL2", "S100A12"),
+       logfc.threshold = 0.58, pValCutoff = 0.01
                   )
 
 

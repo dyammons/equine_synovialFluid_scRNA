@@ -160,6 +160,13 @@ vilnPlots(seu.obj = seu.obj, groupBy = "celltype.l2", numOfFeats = 24, outName =
           outDir = "./output/supplementalData/", outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), 
           assay = "RNA", min.pct = 0.25, only.pos = T)
 
+### Export data to make supplemental table 4
+df <- read.csv("./output/supplementalData/supplemental_data_4_gene_list.csv")
+df <- df[ ,c("cluster","gene")] %>% group_by(cluster) %>% mutate(rowNum = row_number()) %>% filter(rowNum <= 25) %>% ungroup()
+df <- spread(df, key = rowNum, value = gene)
+write.csv(df, "./output/supplementalData/supplemental_table_base.csv", row.names = F)
+
+
 
 #get colors for each cell type
 colz.base <- c(tc.df$newCol, mye.df$newCol, gg_color_hue(length(levels(seu.obj$celltype.l2)))[c(20,3)])
