@@ -361,7 +361,7 @@ geom_hline(yintercept = 0) + scale_color_manual(values = c("blue", "red","grey")
 ggsave(paste("./output/", outName, "/",outName, "_fig3c.png", sep = ""), width = 3.5, height = 2, scale = 2 )
 
 
-### Use DA-seq for abundance analysis
+### Use DA-seq for further abundance analysis -- consistent with original approaches
 library(DAseq)
 meta.df <- as.data.frame(list(
     "label" = c("Normal_1", "Normal_2", "Normal_3", "OA_1", "OA_2", "OA_3"),
@@ -385,17 +385,26 @@ da_cells <- getDAcells(
 da_cells$pred.plot
 ggsave(paste("./output/", outName, "/",outName, "_UMAP_da.png", sep = ""), width = 7, height = 7)
 
+p.data <- ggplot_build(da_cells$rand.plot)
+min.threshold <- min(p.data$data[[2]][c(da_cells$da.down, da_cells$da.up), ]$y) * 0.9
+max.threshold <- max(p.data$data[[2]][c(da_cells$da.down, da_cells$da.up), ]$y) * 0.9
+min.threshold <- min(da_cells$rand.pred[[2]])
+max.threshold <- max(da_cells$rand.pred[[2]])
+
+p <- da_cells$rand.plot
+ggsave(paste("./output/", outName, "/",outName, "_randPlot_da.png", sep = ""), width = 7, height = 7)
+
+
 da_cells <- updateDAcells(
-  X = da_cells, pred.thres = c(-0.6,0.6),
+  X = da_cells, pred.thres = c(min.threshold, max.threshold),
   plot.embedding = as.data.frame(seu.obj@reductions$umap@cell.embeddings)
 )
 ggsave(paste("./output/", outName, "/",outName, "_UMAP_da_sig.png", sep = ""), width = 7, height = 7)
 
 
-### Use miloR to further validate
+### Use miloR to further validate -- n.s
 library(miloR)
 library(BiocParallel)
-
 
 seu.obj$Sample <- seu.obj$name
 seu.obj$Condition <- seu.obj$cellSource
@@ -412,7 +421,7 @@ reducedDim(sce, "UMAP") <- seu.obj@reductions$umap@cell.embeddings
 # Preprocess using miloR to ID neighboorhoods
 milo.obj <- Milo(sce) 
 milo.obj <- buildGraph(milo.obj, k = 30, d = 40)
-milo.obj <- makeNhoods(milo.obj, prop = 0.1, k = 30, d = 40, refined = TRUE, refinement_scheme = "graph")
+milo.obj <- makeNhoods(milo.obj, prop = 0.2, k = 30, d = 40, refined = TRUE, refinement_scheme = "graph")
 p <- plotNhoodSizeHist(milo.obj)
 ggsave(paste0("./output/", outName, "/", outName, "_NhoodSize.png"), width = 7, height = 7)
 
@@ -437,84 +446,6 @@ p <- scater::plotUMAP(milo.obj) + plotNhoodGraphDA(milo.obj, glm_results[!is.na(
                                                    subset.nhoods=!is.na(glm_results$logFC), alpha = 1) + plot_layout(guides = "collect")
 ggsave(paste("./output/", outName, "/", outName, "_milo.png", sep = ""), width = 10, height = 6)
 
-
-
-
-
-
-
-
-# Use GLMM to estimate DA
-bpparam <- SerialParam()
-register(bpparam)
-
-da_results <- testNhoods(milo.obj, design = ~ Condition + (1|Batch), design.df = da_design, fdr.weighting = "graph-overlap",
-                         glmm.solver = "HE-NNLS", REML = TRUE, norm.method = "TMM", BPPARAM = bpparam, fail.on.error = FALSE, max.iter = 1000)
-
-table(da_results$SpatialFDR < 0.1)
-
-
-
-
-
-
-# Attempt blocking with limma
-library(edgeR)
-mat <- as.matrix(table(seu.obj$clusterID_final, seu.obj$name))
-# mat <- nhoodCounts(milo.obj)
-
-vrm.obj <- DGEList(mat, samples = da_design)
-design <- model.matrix(~ Condition, vrm.obj$samples)
-
-
-#fit glm
-vrm.obj <- estimateDisp(vrm.obj, design, trend = "none")
-fit <- glmQLFit(vrm.obj, design, robust = TRUE, abundance.trend = FALSE)
-res <- glmQLFTest(fit, coef = ncol(design))
-summary(decideTests(res))
-da_res <- res$table
-da_res$FDR <- p.adjust(da_res$PValue, method = "fdr")
-da_res$Nhood <- as.numeric(rownames(da_res))
-da_res$SpatialFDR <- da_res$FDR
-
-#try with blocking
-vrm.obj <- voom(mat, design, plot = FALSE)
-corfit <- duplicateCorrelation(vrm.obj, design, block = da_design$Batch)
-
-vrm.obj <- voom(mat, design, plot = FALSE, block = da_design$Batch, correlation = corfit$consensus)
-corfit <- duplicateCorrelation(vrm.obj, design, block = da_design$Batch)
-
-fit <- lmFit(vrm.obj, design, block = da_design$Batch, correlation = corfit$consensus)
-summary(decideTests(fit))
-
-#try with blocking - 2
-nf <- calcNormFactors(mat)
-vrm.obj <- voom(mat, design, lib.size = colSums(mat) * nf)
-corfit <- duplicateCorrelation(vrm.obj, design, block = da_design$Batch)
-vrm.obj <- voom(mat, design, plot = TRUE, lib.size = colSums(mat) * nf, block = da_design$Batch, correlation = corfit$consensus)
-fit <- lmFit(vrm.obj, design, block = da_design$Batch, correlation = corfit$consensus)
-summary(decideTests(fit))
-fit <- eBayes(fit)
-
-
-milo.obj <- buildNhoodGraph(milo.obj)
-p <- scater::plotUMAP(milo.obj) + plotNhoodGraphDA(milo.obj, da_res[!is.na(da_res$logFC), ],
-                                                   subset.nhoods=!is.na(da_res$logFC), alpha = 0.1) + plot_layout(guides = "collect")
-ggsave(paste("./output/", outName, "/", outName, "_milo.png", sep = ""), width = 10, height = 6)
-
-
-
-
-
-
-# da_design <- data.frame(colData(milo.obj)) %>%
-#     select(name, cellSource) %>%
-#     distinct()
-
-# rownames(da_design) <- da_design$name
-
-
-
 # Calc distance between neighborhoods and test for DA
 milo.obj <- calcNhoodDistance(milo.obj, d = 40)
 da_results <- testNhoods(milo.obj, design = ~ Batch + Condition, design.df = da_design)
@@ -525,6 +456,73 @@ milo.obj <- buildNhoodGraph(milo.obj)
 p <- scater::plotUMAP(milo.obj) + plotNhoodGraphDA(milo.obj, da_results[!is.na(da_results$logFC), ],
                                                    subset.nhoods=!is.na(da_results$logFC), alpha = 0.1) + plot_layout(guides = "collect")
 ggsave(paste("./output/", outName, "/", outName, "_milo.png", sep = ""), width = 10, height = 6)
+
+
+### Attempt blocking with limma using clusters -- n.s
+library(edgeR)
+Idents(seu.obj) <- "name"
+seu.obj.sub <- subset(seu.obj, downsample = min(table(seu.obj$name)))
+tabl <- table(seu.obj.sub$clusterID_final, seu.obj.sub$name)
+
+tabl <- table(seu.obj$clusterID_final, seu.obj$name)
+mat <- matrix(tabl, ncol = 6)
+colnames(mat) <- colnames(tabl)
+rownames(mat) <- rownames(tabl)
+# mat <- nhoodCounts(milo.obj) #alternatively use the matrix of Nhood counts
+
+#set up the limma object
+vrm.obj <- DGEList(mat, samples = da_design)
+
+#lm
+design <- model.matrix(~ Batch + Condition, vrm.obj$samples)
+vrm.obj <- calcNormFactors(vrm.obj)
+cpms <- cpm(vrm.obj, log = TRUE)
+fit <- lmFit(cpms, design)
+fit <- eBayes(fit)
+topTable(fit, adjust = "BH")
+
+#fit glm
+design <- model.matrix(~ Batch + Condition, vrm.obj$samples)
+vrm.obj <- estimateDisp(vrm.obj, design, trend = "none")
+fit <- glmQLFit(vrm.obj, design, robust = TRUE, abundance.trend = FALSE)
+res <- glmQLFTest(fit, coef = ncol(design))
+summary(decideTests(res))
+da_res <- res$table
+da_res$FDR <- p.adjust(da_res$PValue, method = "fdr")
+da_res$Nhood <- as.numeric(rownames(da_res))
+
+#try with norm factors
+design <- model.matrix(~ Batch + Condition, vrm.obj$samples)
+vrm.obj <- calcNormFactors(vrm.obj)
+vrm.obj <- estimateDisp(vrm.obj, design, trend = "none")
+fit <- glmQLFit(vrm.obj, design, robust = TRUE, abundance.trend = FALSE)
+res <- glmQLFTest(fit, coef = ncol(design))
+topTags(res, n = 11)
+
+#try with lfc testing
+res.lfc <- glmTreat(fit, coef = ncol(design), lfc = 0.58)
+topTags(res.lfc, n = 11)
+
+#try with blocking
+design <- model.matrix(~ da_design$Condition)
+vrm.obj <- voom(mat, design = design, plot = FALSE)
+corfit <- duplicateCorrelation(vrm.obj, design, block = da_design$Batch)
+
+vrm.obj <- voom(mat, design, plot = FALSE, block = da_design$Batch, correlation = corfit$consensus)
+corfit <- duplicateCorrelation(vrm.obj, design, block = da_design$Batch)
+
+fit <- lmFit(vrm.obj, design, block = da_design$Batch, correlation = corfit$consensus)
+summary(decideTests(fit))
+
+#try with blocking - 2
+design <- model.matrix(~ da_design$Condition)
+nf <- calcNormFactors(mat)
+vrm.obj <- voom(mat, design, lib.size = colSums(mat) * nf)
+corfit <- duplicateCorrelation(vrm.obj, design, block = da_design$Batch)
+vrm.obj <- voom(mat, design, plot = TRUE, lib.size = colSums(mat) * nf, block = da_design$Batch, correlation = corfit$consensus)
+fit <- lmFit(vrm.obj, design, block = da_design$Batch, correlation = corfit$consensus)
+summary(decideTests(fit))
+fit <- eBayes(fit)
 
 
 ### Fig 3d - gene sig comparing IL23R_gd_T1 to other T cells
