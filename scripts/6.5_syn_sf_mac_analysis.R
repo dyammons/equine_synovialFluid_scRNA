@@ -2,6 +2,7 @@
 
 #load custom functions & packages
 source("/pl/active/dow_lab/dylan/repos/scrna-seq/analysis-code/customFunctions.R")
+library(scProportionTest)
 
 ###########################################
 ### BEGIN cross tissue myeloid analysis ###
@@ -110,7 +111,7 @@ seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = pas
 
 #load in the integrated dataset
 seu.obj <- readRDS("./output/s3/Nov_22_2023_mac_2500_res0.6_dims40_dist0.3_neigh30_S3.rds")
-
+table(seu.obj$cellSource)
 
 clusTrans.df <- table(seu.obj$clusterID_sub, seu.obj$majorID_sub) %>% melt() %>% group_by(Var.2) %>% top_n(., 1, value)
 
@@ -260,7 +261,6 @@ outName <- "mac_syn"
 seu.obj.sub <- subset(x = seu.obj, subset = tissueSource == "Synovium")
 
 #method of downsampling profoundly impacts the intpretations -- rec dwn sample by name over cellSource
-library(scProportionTest)
 
 Idents(seu.obj) <- "name"
 set.seed(12)

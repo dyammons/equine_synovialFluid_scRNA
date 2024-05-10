@@ -175,8 +175,6 @@ gg2 <- netVisual_heatmap(cellchat, measure = "weight",
                          cluster.cols = F, color.use = colz.base)
 
 #extract the data and customize the heatmap
-
-
 colz.base <- colz.base[match(rownames(gg2@matrix), names(colz.base))]
 ha <- HeatmapAnnotation(celltype = names(colz.base),
                         col = list(celltype = colz.base),
@@ -194,22 +192,33 @@ row_ha <- rowAnnotation(celltype = names(colz.base),
 outfile <- paste0("./output/", outName, "/", subName, "_fig5d.png")
 png(file = outfile, width=2250, height=2500, res=500)
 
-cusHeat <- Heatmap(gg2@matrix, na_col = "white", col = gg2@matrix_color_mapping, 
-                   bottom_annotation = ha, left_annotation = row_ha,
-                   show_column_dend = FALSE, show_row_dend = FALSE, row_names_side = "left",
-                   row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 8),
-                   column_title = "Differenital interaction strength", column_title_gp = gpar(fontsize = 10), column_names_rot = 60,
-                   row_title = "Sources (Sender)", row_title_gp = gpar(fontsize = 10), row_title_rot = 90,
-                   cluster_rows=T, cluster_columns=T,
-                  
-                   heatmap_legend_param = list(title_gp = gpar(fontsize = 8, fontface = "plain"), title_position = "leftcenter-rot",
-                                               border = NA,
-                                               legend_height = unit(20, "mm"), labels_gp = gpar(fontsize = 8),grid_width = unit(2, "mm"))
-                 )
+
+cusHeat <- Heatmap(
+    gg2@matrix, 
+    na_col = "white", 
+    col = gg2@matrix_color_mapping,
+    bottom_annotation = ha, 
+    left_annotation = row_ha,
+    show_column_dend = FALSE, 
+    show_row_dend = FALSE, 
+    row_names_side = "left",
+    row_names_gp = gpar(fontsize = 8),
+    column_names_gp = gpar(fontsize = 8),
+    column_title = "Differential interaction strength",
+    column_title_gp = gpar(fontsize = 10, fontface = "bold"),
+    column_names_rot = 60,
+    row_title = "Sources (Sender)", 
+    row_title_gp = gpar(fontsize = 10),
+    row_title_rot = 90,
+    cluster_rows=T, 
+    cluster_columns=T,
+    heatmap_legend_param = list(title_gp = gpar(fontsize = 8, fontface = "plain"), title_position = "leftcenter-rot",
+                                border = NA,
+                                legend_height = unit(20, "mm"), labels_gp = gpar(fontsize = 8),grid_width = unit(2, "mm"))
+)
 
 cusHeat
 dev.off()
-
 
 
 #plot information flow
@@ -260,7 +269,7 @@ pis <- lapply(c("Normal","OA"),function(z){
 
     ggplot(data=gg.df.sub, aes(x = x, y = y, size=Count, colour = labels, label=lab)) + 
             ggtitle(z) +
-            geom_point() + 
+            geom_point(color = gg.df.sub$colz.base) + 
             labs(x = "Outgoing interaction strength", y = "Incoming interaction strength") +
             geom_text_repel(max.overlaps = Inf, size=3, color = "black") + 
             theme_classic() + 
@@ -268,8 +277,11 @@ pis <- lapply(c("Normal","OA"),function(z){
           axis.text = element_text(size= 8),
           title = element_text(size= 11),
           legend.title=element_text(size=10), 
-          legend.text=element_text(size=8)
-                 ) + NoLegend()
+          legend.text=element_text(size=8),
+          legend.position = "right",
+          legend.direction = "vertical",
+          plot.title = element_text(face = "bold", hjust = 0.5)
+                 )
 })
 
 pi2 <- Reduce( `+`, pis ) + plot_layout(ncol = 2, guides = 'collect') & scale_size_continuous(limits = c(min(gg.df$Count), max(gg.df$Count))) & xlim(0, 10) & ylim(0, 10) & scale_color_manual(values = unname(colz.base), labels = names(colz.base))

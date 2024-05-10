@@ -40,8 +40,8 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] UpSetR_1.4.0                scProportionTest_0.0.0.9000
- [3] CellChat_1.5.0              igraph_1.5.1               
+ [1] CellChat_1.5.0              igraph_1.5.1               
+ [3] UpSetR_1.4.0                scProportionTest_0.0.0.9000
  [5] ComplexHeatmap_2.13.2       ggtree_3.2.1               
  [7] ape_5.7-1                   scuttle_1.4.0              
  [9] scRNAseq_2.8.0              ggpubr_0.4.0               
@@ -78,7 +78,7 @@ loaded via a namespace (and not attached):
  [13] GOSemSim_2.20.0               rlang_1.0.6                  
  [15] XVector_0.34.0                ROCR_1.0-11                  
  [17] readxl_1.4.1                  irlba_2.3.5                  
- [19] filelock_1.0.2                BiocParallel_1.28.3          
+ [19] filelock_1.0.2                BiocParallel_1.37.1          
  [21] rjson_0.2.21                  bit64_4.0.5                  
  [23] glue_1.6.2                    rngtools_1.5.2               
  [25] sctransform_0.3.5             parallel_4.1.1               
@@ -135,43 +135,42 @@ loaded via a namespace (and not attached):
 [127] rappdirs_0.3.3                registry_0.5-1               
 [129] RSQLite_2.2.18                yulab.utils_0.0.5            
 [131] future.apply_1.10.0           data.table_1.14.4            
-[133] blob_1.2.3                    labeling_0.4.2               
-[135] splines_4.1.1                 AnnotationHub_3.2.2          
-[137] ProtGenerics_1.26.0           RCurl_1.98-1.12              
-[139] broom_1.0.1                   hms_1.1.2                    
-[141] modelr_0.1.8                  BiocManager_1.30.19          
-[143] shape_1.4.6                   aplot_0.1.2                  
-[145] Rcpp_1.0.11                   RANN_2.6.1                   
-[147] circlize_0.4.16               enrichplot_1.14.2            
-[149] fansi_1.0.3                   tzdb_0.3.0                   
-[151] parallelly_1.32.1             R6_2.5.1                     
-[153] ggridges_0.5.4                lifecycle_1.0.3              
-[155] curl_4.3.3                    ggsignif_0.6.4               
-[157] leiden_0.4.3                  DO.db_2.9                    
-[159] Matrix_1.5-1                  qvalue_2.26.0                
-[161] RcppAnnoy_0.0.20              iterators_1.0.14             
-[163] spatstat.explore_3.0-5        htmlwidgets_1.5.4            
-[165] beachmat_2.10.0               polyclip_1.10-4              
-[167] biomaRt_2.50.3                network_1.18.0               
-[169] shadowtext_0.1.1              timechange_0.1.1             
-[171] gridGraphics_0.5-1            rvest_1.0.3                  
-[173] globals_0.16.1                spatstat.random_3.1-3        
-[175] progressr_0.11.0              codetools_0.2-18             
-[177] lubridate_1.9.0               FNN_1.1.3.1                  
-[179] GO.db_3.14.0                  prettyunits_1.1.1            
-[181] dbplyr_2.1.1                  RSpectra_0.16-1              
-[183] gridBase_0.4-7                gtable_0.3.1                 
-[185] DBI_1.1.3                     ggalluvial_0.12.3            
-[187] ggfun_0.0.8                   tensor_1.5                   
-[189] httr_1.4.4                    KernSmooth_2.23-20           
-[191] stringi_1.7.8                 progress_1.2.2               
-[193] reshape2_1.4.4                farver_2.1.1                 
-[195] annotate_1.72.0               xml2_1.3.3                   
-[197] BiocNeighbors_1.12.0          restfulr_0.0.15              
-[199] geneplotter_1.72.0            ggplotify_0.1.0              
-[201] scattermore_0.8               BiocVersion_3.14.0           
-[203] bit_4.0.4                     scatterpie_0.1.7             
-[205] spatstat.data_3.0-0           pkgconfig_2.0.3              
-[207] babelgene_22.9                rstatix_0.7.0                
-[209] knitr_1.40    
+[133] blob_1.2.3                    splines_4.1.1                
+[135] AnnotationHub_3.2.2           ProtGenerics_1.26.0          
+[137] RCurl_1.98-1.12               broom_1.0.1                  
+[139] hms_1.1.2                     modelr_0.1.8                 
+[141] BiocManager_1.30.19           shape_1.4.6                  
+[143] aplot_0.1.2                   Rcpp_1.0.11                  
+[145] RANN_2.6.1                    circlize_0.4.16              
+[147] enrichplot_1.14.2             fansi_1.0.3                  
+[149] tzdb_0.3.0                    parallelly_1.32.1            
+[151] R6_2.5.1                      ggridges_0.5.4               
+[153] lifecycle_1.0.3               curl_4.3.3                   
+[155] ggsignif_0.6.4                leiden_0.4.3                 
+[157] DO.db_2.9                     Matrix_1.5-1                 
+[159] qvalue_2.26.0                 RcppAnnoy_0.0.20             
+[161] iterators_1.0.14              spatstat.explore_3.0-5       
+[163] htmlwidgets_1.5.4             beachmat_2.10.0              
+[165] polyclip_1.10-4               biomaRt_2.50.3               
+[167] network_1.18.0                shadowtext_0.1.1             
+[169] timechange_0.1.1              gridGraphics_0.5-1           
+[171] rvest_1.0.3                   globals_0.16.1               
+[173] spatstat.random_3.1-3         progressr_0.11.0             
+[175] codetools_0.2-18              lubridate_1.9.0              
+[177] FNN_1.1.3.1                   GO.db_3.14.0                 
+[179] prettyunits_1.1.1             dbplyr_2.1.1                 
+[181] RSpectra_0.16-1               gridBase_0.4-7               
+[183] gtable_0.3.1                  DBI_1.1.3                    
+[185] ggalluvial_0.12.3             ggfun_0.0.8                  
+[187] tensor_1.5                    httr_1.4.4                   
+[189] KernSmooth_2.23-20            stringi_1.7.8                
+[191] progress_1.2.2                reshape2_1.4.4               
+[193] farver_2.1.1                  annotate_1.72.0              
+[195] xml2_1.3.3                    BiocNeighbors_1.12.0         
+[197] restfulr_0.0.15               geneplotter_1.72.0           
+[199] ggplotify_0.1.0               scattermore_0.8              
+[201] BiocVersion_3.14.0            bit_4.0.4                    
+[203] scatterpie_0.1.7              spatstat.data_3.0-0          
+[205] pkgconfig_2.0.3               babelgene_22.9               
+[207] rstatix_0.7.0                 knitr_1.40  
 ```

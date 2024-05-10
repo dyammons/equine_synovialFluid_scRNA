@@ -59,6 +59,7 @@ seu.obj <- dataVisUMAP(seu.obj = seu.obj, outDir = "./output/s3/", outName = "23
 
 #load in processed data
 seu.obj <- readRDS("./output/s3/231220_rngr612_noMods_res0.7_dims50_dist0.2_neigh25_S3.rds")
+colz.base <- c("#00C1A7","#00A6FF","#00BADE", "#64B200", "#00B5ED", "#00C0BB", "#619CFF", "#AEA200", "#DB8E00", "#B385FF", "#F8766D") 
 outName <- "allCells_syn"
 
 #create new cluster ID number based on cluster size; smallest number (0) cooresponds to largest cluster
@@ -73,6 +74,24 @@ table(Idents(seu.obj))
 seu.obj$clusterID_major <- Idents(seu.obj)
 
 seu.obj$finalClusters <- ifelse(grepl("synoviocyte", seu.obj$finalClusters), paste0("Synoviocyte_c",seu.obj$clusterID_major), as.character(seu.obj$finalClusters))
+
+
+#summary data for cell type percentages in myeloid cells
+table(seu.obj$finalClusters, seu.obj$name) %>%
+    as.data.frame() %>%
+    group_by(Var2) %>%
+    mutate(pct = prop.table(Freq)) %>%
+    group_by(Var1) %>%
+    tidyr::pivot_longer(cols = where(is.double)) %>% 
+    mutate(
+        NAME = gsub("\\-.*", "", name),
+        STAT = gsub(".*-", "", name),
+        value = round((value * 100), 2)
+    ) %>% 
+    select(-name) %>% 
+    pivot_wider(names_from = "NAME") %>% 
+    as.data.frame() 
+
 
 ### Data supplemental - generate violin plots of defining features
 vilnPlots(seu.obj = seu.obj, groupBy = "majorID_pertyName", numOfFeats = 24, outName = "supplemental_data_8", returnViln = F, 
@@ -92,11 +111,7 @@ ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_inp
                feats = c("PTPRC", "CD3E", "CD8A", "GZMA", 
                                      "IL7R", "ANPEP", "FLT3", "DLA-DRA", 
                                      "CD4", "MS4A1", "FBLN1","ACAT2")
-                          
                           )
-
-#set colors
-colz.base <- c("#00C1A7","#00A6FF","#00BADE", "#64B200", "#00B5ED", "#00C0BB", "#619CFF", "#AEA200", "#DB8E00", "#B385FF", "#F8766D") 
 
 
 ### Fig 5a: plot inital cluster umap
@@ -109,7 +124,7 @@ pi <- DimPlot(seu.obj,
               label.box = TRUE,
               repel = TRUE
  )
-p <- cusLabels(plot = pi, shape = 21, size = 10, textSize = 6, alpha = 0.8, smallAxes = T) & NoLegend()
+p <- cusLabels(plot = pi, shape = 21, size = 10, textSize = 6, alpha = 0.6, smallAxes = T) & NoLegend()
 ggsave(paste("./output/", outName, "/", outName, "_fig5a.png", sep = ""), width = 7, height = 7)
 
 
@@ -139,9 +154,7 @@ ggsave(paste("./output/", outName, "/", outName, "_fig5b.png", sep = ""), width 
 Idents(seu.obj) <- "name"
 set.seed(12)
 seu.obj.sub <- subset(x = seu.obj, downsample = min(table(seu.obj$name)))
-
 log2FD_threshold <- 0.58
-
 prop_test <- sc_utils(seu.obj.sub)
 prop_test <- permutation_test( prop_test, cluster_identity = "finalClusters", sample_1 = "Normal", sample_2 = "OA", sample_identity = "cellSource" )
 p <- permutation_plot(prop_test)  + theme(axis.title.y = element_blank(),
@@ -170,6 +183,179 @@ geom_hline(yintercept = 0) + scale_color_manual(values = c("blue", "red","grey")
                                                         ) + ylab("abundance change (log2FC)")
 
 ggsave(paste("./output/", outName, "/",outName, "_fig2c.png", sep = ""), width = 3.5, height = 2, scale = 2 )
+
+
+### DGE analysis using leinent Wilcoxon rank-sum test
+
+
+### Fig 1d/e - DEG heatmap and scatter plot of DEGs in each major subset
+#complete dge analysis within each major subset
+seu.obj$finalClusters <- factor(gsub("/", "_", seu.obj$finalClusters))
+seu.obj$finalClusters <- factor(seu.obj$finalClusters, levels = c("Synoviocyte_c0", "Synoviocyte_c1", "Synoviocyte_c2",
+                                                                   "Macrophage_DC", "Synoviocyte_c4", "Synoviocyte_c5", 
+                                                                   "Synoviocyte_c6", "Endothelial", "Fibroblast",
+                                                                   "T cell", "Myofibroblast")) 
+
+linDEG(seu.obj = seu.obj, groupBy = "finalClusters", comparision = "cellSource", outDir = paste0("./output/", outName,"/linDEG/"), outName = "allCells", cluster = NULL, labCutoff = 10, noTitle = F, labsHide = "^ENSECAG", contrast = c("OA", "Normal"),
+                   colUp = "red", colDwn = "blue", subtitle = T, returnUpList = F, returnDwnList = F, forceReturn = F, useLineThreshold = F, pValCutoff = 0.01, saveGeneList = T, returnPlots = F
+                  )
+
+
+#load dge results and create heatmap of degs
+files <- list.files(path = "./output/allCells_syn/linDEG/", pattern=".csv", all.files=FALSE,
+                        full.names=T)
+
+df.list <- lapply(files, read.csv, header = T)
+
+cnts_mat <- do.call(rbind, df.list)  %>% 
+    mutate(
+        direction = case_when(
+            avg_log2FC <= -1 ~ "Down",
+            avg_log2FC >= 1 ~ "Up",
+            avg_log2FC < 1 & avg_log2FC > -1 ~ "n.s."
+        )
+    ) %>% 
+    filter(!direction == "n.s.") %>%
+    group_by(cellType, direction) %>% 
+    summarize(nRow = n()) %>% 
+    pivot_wider(names_from = cellType, values_from = nRow) %>% 
+    as.matrix() %>% t()
+
+colnames(cnts_mat) <- cnts_mat[1,]
+cnts_mat <- cnts_mat[-c(1),]
+class(cnts_mat) <- "numeric"
+
+orderList <- rev(rownames(cnts_mat)[order(rowSums(cnts_mat))])
+cnts_mat <- cnts_mat[match(orderList, rownames(cnts_mat)),]        
+
+png(file = paste0("./output/", outName, "/",outName, "_deg_heat.png"), width=1500, height=2000, res=400)
+par(mfcol=c(1,1))         
+ht <- Heatmap(cnts_mat,#name = "mat", #col = col_fun,
+              name = "# of DEGs",
+              cluster_rows = F,
+              row_title = "Cell type",
+              col = viridis(100), #circlize::colorRamp2(c(0,max(cnts_mat)), colors = c("white","red")),
+              cluster_columns = F,
+              column_title = gt_render(
+                  paste0("<span style='font-size:18pt; color:black'># of DEGs</span><br>",
+                         "<span style='font-size:12pt; color:black'>(OA vs Normal)</span>")
+              ),
+              show_column_names = TRUE,
+              column_title_side = "top",
+              column_names_rot = 0,
+              column_names_centered = TRUE,
+              heatmap_legend_param = list(legend_direction = "horizontal", title_position = "topleft",  title_gp = gpar(fontsize = 16), 
+                                          labels_gp = gpar(fontsize = 8), legend_width = unit(6, "cm")),
+                            cell_fun = function(j, i, x, y, width, height, fill) {
+                  if(cnts_mat[i, j] > 10) {
+                      grid.text(sprintf("%.0f", as.matrix(cnts_mat)[i, j]), x, y, gp = gpar(fontsize = 14, col = "black"))
+                  } else if(cnts_mat[i, j] <= 10) {
+                      grid.text(sprintf("%.0f", as.matrix(cnts_mat)[i, j]), x, y, gp = gpar(fontsize = 14, col = "grey80"))
+                  }                          
+              })
+draw(ht, padding = unit(c(2, 12, 2, 5), "mm"),show_heatmap_legend = FALSE)
+dev.off()
+
+
+### Supp fig xx -- heatmap of degs by each cluster
+seu.obj$type <- factor(paste0(as.character(seu.obj$finalClusters), "--", as.character(seu.obj$cellSource)),
+                       levels = paste0(rep(levels(seu.obj$finalClusters), each = 2), "--", c("Normal", "OA")))
+
+files <- paste0("./output/allCells_syn/linDEG/", "allCells_", gsub(" ", "_", levels(seu.obj$finalClusters)), "_geneList.csv")
+df.list <- lapply(files, read.csv, header = T)
+res.df <- do.call(rbind, df.list) %>% filter(abs(avg_log2FC) > 1) %>% filter(!grepl("^ENS", X))
+
+sig.mat <- matrix(nrow = length(unique(res.df$X)), ncol = length(levels(seu.obj$type)),
+                  dimnames = list(unique(res.df$X),
+                                  toupper(levels(seu.obj$type))))
+
+for(i in 1:nrow(sig.mat)){
+    for(j in 1:ncol(sig.mat)){
+        cellType <- strsplit(colnames(sig.mat)[j], "--")[[1]][1]
+        condition <- strsplit(colnames(sig.mat)[j], "--")[[1]][2]
+        if(cellType %in% toupper(res.df[res.df$X == rownames(sig.mat)[i], ]$cellType)){
+            lfc <- res.df[res.df$X == rownames(sig.mat)[i] & toupper(res.df$cellType) == cellType, ]$avg_log2FC
+            if(lfc > 1 & condition == "OA"){
+                sig.mat[i, j] <- "*"
+            } else if(lfc < -1 & condition == "NORMAL"){
+                sig.mat[i, j] <- "*"
+            } else{
+                sig.mat[i, j] <- ""
+            }
+        } else{
+            sig.mat[i, j] <- ""
+        }
+    }
+}
+
+res.df <- res.df[!duplicated(res.df$X), ]
+
+#extract metadata and data
+metadata <- seu.obj@meta.data
+expression <- as.data.frame(t(seu.obj@assays$RNA@counts)) #use raw count
+expression$anno_merge <- seu.obj@meta.data[rownames(expression),]$type
+
+#get cell type expression averages - do clus avg expression by sample
+clusAvg_expression <- expression %>% group_by(anno_merge) %>% summarise(across(where(is.numeric), mean)) %>% as.data.frame()
+rownames(clusAvg_expression) <- clusAvg_expression$anno_merge
+clusAvg_expression$anno_merge <- NULL
+
+#filter matrix for DEGs and scale by row
+clusAvg_expression <- clusAvg_expression[ ,colnames(clusAvg_expression) %in% res.df$X]
+mat_scaled <- t(apply(t(log1p(clusAvg_expression)), 1, scale))
+colnames(mat_scaled) <- rownames(clusAvg_expression)
+mat_scaled <- mat_scaled[ ,match(colnames(sig.mat), toupper(colnames(mat_scaled)))]
+mat_scaled <- mat_scaled[match(rownames(sig.mat), rownames(mat_scaled)), ]  
+
+#set annotations
+samp <- unique(seu.obj$colz)
+names(samp) <- unique(seu.obj$name)
+clus <- colz.base
+names(clus) <- levels(seu.obj$finalClusters)
+cond_colz <- c("mediumseagreen","mediumpurple1")
+names(cond_colz) <- c("Normal","OA")
+
+# heat_col <- viridis(option = "magma",100)
+ha <- HeatmapAnnotation(
+    Cluster = unlist(lapply(colnames(mat_scaled), function(x){strsplit(x,"--")[[1]][1]})),
+    Condition = unlist(lapply(colnames(mat_scaled), function(x){strsplit(x,"--")[[1]][2]})),
+    border = TRUE,
+    col = list(Cluster = clus, Condition = cond_colz)
+)
+
+#plot the data
+ht <- Heatmap(
+    mat_scaled,
+    name = "mat",
+    cluster_rows = F,
+    row_title_gp = gpar(fontsize = 24),
+    show_row_names = T,
+    cluster_columns = F,
+    top_annotation = ha,
+    show_column_names = F,
+    column_split = factor(unlist(lapply(colnames(mat_scaled), function(x){strsplit(x,"--")[[1]][1]})),
+                          levels = levels(seu.obj$finalClusters)),
+    row_title = NULL,
+    column_title = NULL,
+    heatmap_legend_param = list(
+            title = "Scaled expression",
+            direction = "horizontal"
+        ),
+    cell_fun = function(j, i, x, y, width, height, fill) {
+        grid.text(sig.mat[i, j], x, y, gp = gpar(fontsize = 14, col = "black"))
+    }
+)
+
+png(file = paste0("./output/", outName, "/", outName, "_fig3e.png"), width=3750, height=3750, res=400)
+par(mfcol=c(1,1))   
+draw(ht, padding = unit(c(2, 2, 2, 2), "mm"))
+
+for(i in 1:length(levels(seu.obj$finalClusters))){
+    decorate_annotation("Cluster", slice = i, {
+        grid.text(paste0("c", (1:11) - 1)[i], just = "center")
+    })
+}
+dev.off()
 
 
 ##################################
