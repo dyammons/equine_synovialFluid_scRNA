@@ -2,11 +2,9 @@
 ### To complete a reproducible run from raw data:
 Retrieve the fastq files from SRA and then align to the equine genome (EquCab3.0; Ensembl) using Cell Ranger (version 6.1.2) with default settings. 
 Instructions to download the fastq files can be found in [:file\_folder: input](/input). 
-The alignment code is currently not provided, but can be shared if desired. If you want it, you can request through GitHub.
 
 ### To complete a reproducible run from cellranger output count matricies:
 Download the supplementary zip folder on the NCBI GEO project page as decribed in [:file\_folder: input](/input) directory.
-In addition to the count matrices you will also need the .csv files located in the [:file\_folder: sheets](/input/sheets) directory.
 Once all files are in place, you can use the provided scripts (generally split by major analysis step) and the source file [customFunctions.R](/analysis/customFunctions.R) to explore the analysis approach.
 
 NOTE: the file paths in the indivdual scripts will may need to be modified when reading/writing data to run on your system.
@@ -16,9 +14,8 @@ Download the .rds files on the Zenodo project page as described in [:file\_folde
 These files can be loaded into individual analysis scripts to bypass some of the more computationally intense steps, or they can be used for your own exploration!
 
 ### Envrionement to reproduce:
-This work was completed on the UC Boulder Alpine supercomputer on a Linux operating system. All code was run in a Conda environment and I am happy to share the .yml file upon request.
+This work was completed on the UC Boulder Alpine supercomputer on a Linux operating system. All code was run in a Conda environment.
 
-Otherwise, see below for packages loaded into the system.
 ### Software versions
 ```r
 > sessionInfo()
