@@ -7,8 +7,6 @@ This GitHub repository contains all the analysis code used in, "Characterization
 
 The manuscript is currently under review and the GitHub page will be finalized by the time of publication.
 
-A pre-print will be avaliable shortly.
-
 ## Repository goals: 
 - provide a resource to make the data generated from this project accessible
 - enable reproducible/transparent data reporting
