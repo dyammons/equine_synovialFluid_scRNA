@@ -3,9 +3,9 @@
 [![DOI](https://zenodo.org/badge/635774225.svg)](https://zenodo.org/doi/10.5281/zenodo.10680754)
 
 
-This GitHub repository contains all the analysis code used in, "Characterization of single cell transcriptomic responses to osteoarthritis in a naturally occurring equine model."
+This GitHub repository contains all the analysis code used in, "Characterization of the single cell landscape in normal and osteoarthritic equine joints."
 
-The manuscript is currently under review and the GitHub page will be finalized by the time of publication.
+The manuscript has been conditionally accepted  and will be published in Annals of Translational Medicine shortly.
 
 ## Repository goals: 
 - provide a resource to make the data generated from this project accessible
