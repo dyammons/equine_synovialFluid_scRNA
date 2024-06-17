@@ -330,6 +330,41 @@ print(cellchat.norm@netP$pathways[!cellchat.norm@netP$pathways %in% cellchat.oa@
 
 
 
+### Fig 4c - stacked bargraph of network information flow
+#plot information flow using CellChat built-in function
+gg1 <- rankNet(cellchat, mode = "comparison", stacked = T, do.stat = TRUE)
+
+#extract data and plot using custom code
+res.df <- gg1$data %>% filter(pvalues < 0.05)
+
+orderz <- res.df[res.df$group == "Normal", ] %>% left_join(res.df[res.df$group == "OA", ], by = "name") %>% mutate(pct = contribution.x/contribution.y) %>% pull(name) %>% as.character()
+
+res.df$name <- factor(res.df$name, levels = orderz)
+res.df$group <- factor(res.df$group, levels = c("Normal", "OA"))
+p <- ggplot(res.df, aes(x = contribution, y = name, fill = factor(group))) +
+            geom_bar(stat = "identity", position = "fill", width = 1, colour="white") +
+            theme_classic() + geom_vline(xintercept = 0.5, linetype="dashed", color = "grey50", size=1) +
+            theme(title = element_text(size = 14),
+                  legend.title = element_blank(),
+                  legend.text = element_text(size = 16),
+                  legend.position = "top",
+                  legend.direction = "horizontal",
+                  plot.title = element_blank(),
+                  axis.line = element_line(colour = "black"),
+                  legend.key.size = unit(1,"line"),
+                  axis.title = element_text(size = 18),
+                  axis.text = element_text(size = 16),
+                  plot.margin = margin(t = 0, r = 21, b = 0, l = 0, unit = "pt")
+            ) +
+            scale_y_discrete(expand = c(0, 0)) +
+            scale_x_continuous(expand = c(0,0)) + 
+            ylab(label = "Interaction network") +
+            xlab(label = "Relative information flow") + 
+            guides(fill = guide_legend(nrow = 1)) + scale_fill_manual(values=c("mediumseagreen","mediumpurple1"))
+
+ggsave(p, file = paste0("./output/", outName, "/", subName, "_fig4c.png"), height = 8, width = 7)
+
+
 ### Fig 8d/8e + Fig supp 8b-d: circos plots & violin plots
 
 groupz.df <- table(seu.obj$majorID, seu.obj$finalClusters) %>% melt() %>% filter(value > 0)
