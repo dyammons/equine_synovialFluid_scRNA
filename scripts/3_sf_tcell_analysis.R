@@ -147,13 +147,25 @@ df <- spread(df, key = rowNum, value = gene)
 write.csv(df, "./output/supplementalData/supplemental_table_base.csv", row.names = F)
 
 ### Data supplemental - export data for cell browser
-ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_input/", 
-               markers = "./output/supplementalData/supplemental_data_7.csv", 
-               reduction = "umap",  colsTOkeep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "Phase", "majorID",
-                                                   "clusterID", "clusterID_sub", "celltype.l2", "name", "cellSource"), 
+ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, outDir = "./output/cb_input/", 
+               markers = "./output/supplementalData/supplemental_data_7_gene_list.csv", 
+               reduction = "umap",  colsTOkeep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "Phase", 
+                                                   "clusterID", "clusterID_sub", "majorID", "celltype.l2", "name", "cellSource"), 
                skipEXPR = F, test = F,
-                           feats = c("CD3E", "GZMA", "ADGRG1")
-                          )
+               feats = c(
+                   "CALY","CD40LG",
+                   "SELL","LEF1","CCR7",
+                   "FGL2","CTLA4","FOXP3",
+                   "CTSW","GZMA", "CCL5","CCR5","IL2RB",
+                   "GZMK","GZMM","IDO1",
+                   "CRYBG2","CX3CR1","ZEB2",
+                   "GNLY","KLRD1","KLRB1", 
+                   "TRDC",
+                   "SCART1","IL23R","KLRF1",
+                   "BLK","CD160",
+                   "IRF7","ISG20","ISG15"
+               )
+              )
 
 #load in colors
 majorColors.df <- read.csv("sf_idents_tcell_08-10-2023.csv")

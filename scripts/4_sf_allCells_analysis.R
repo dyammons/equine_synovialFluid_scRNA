@@ -204,6 +204,21 @@ df <- spread(df, key = rowNum, value = gene)
 write.csv(df, "./output/supplementalData/supplemental_table_base.csv", row.names = F)
 
 
+### Export data for cell browser
+ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, outDir = "./output/cb_input/", 
+               markers = "./output/supplementalData/supplemental_data_2_gene_list.csv", 
+               reduction = "umap",  colsTOkeep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "Phase", 
+                                                   "clusterID", "celltype.l1", "celltype.l2", "name", "cellSource"), 
+               skipEXPR = F, test = F,
+               feats = c(
+                   "CD3E","AIF1","CD1C", 
+                   "CTSW","CD68","CSF3R",
+                   "GZMA","GPNMB","S100A12",
+                   "TRDC","MARCO","MS4A1",
+                   "KLRB1","FLT3","TOP2A"
+               )
+              )
+
 #get colors for each cell type
 colz.base <- c(tc.df$newCol, mye.df$newCol, 
                all.df[all.df$majorID == "cycling" & all.df$majCol == "yes", ]$newCol,

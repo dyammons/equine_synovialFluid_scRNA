@@ -183,16 +183,30 @@ vilnPlots(seu.obj = seu.obj, groupBy = "majorID_sub", numOfFeats = 24, outName =
                       outDir = paste0("./output/supplementalData/"), outputGeneList = T, filterOutFeats = c("^MT-", "^RPL", "^RPS"), assay = "RNA", 
                       min.pct = 0.25, only.pos = T)
 
-
+seu.obj$celltype.l2 <- seu.obj$majorID_sub
 ### Data supplemental - export data for cell browser
-ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_input/", 
+ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, outDir = "./output/cb_input/", 
                markers = paste0("./output/viln/",outName,"/",datE,outName,"_gene_list.csv"), 
                reduction = "umap",  colsTOkeep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "Phase", "majorID",
-                                                   "clusterID", "clusterID_sub", "majorID_sub", "name", "cellSource"), 
-               skipEXPR = F, test = F,
-                           feats = c("CD68", "FLT3", "CD1C")
-                          
-                          )
+                                                   "clusterID", "clusterID_sub", "celltype.l2", "name", "cellSource"), 
+               skipEXPR = T, test = F,
+               feats = c(
+                   "AIF1","DRA","ITGAX",
+                   "SELP", "CSF3R","SELL",
+                   "CXCL8","VCAN", "LYZ",
+                   "AQP9",
+                   "MSR1","CSF1R",
+                   "CCL2","CCL8","LYVE1",
+                   "TPPP3",
+                   "MARCO","CD5L","GPNMB",
+                   "FLT3",
+                   "BATF3","DNASE1L3","IRF8",
+                   "CD1C","FCER1A",
+                   "TCF4","MS4A1",
+                   "LAMP3","CCR7",
+                   "TOP2A"
+               )
+              )
 
 #load in cell type colors
 colArray <- read.csv("./sf_idents_08-01-2023.csv")

@@ -103,16 +103,21 @@ vilnPlots(seu.obj = seu.obj, groupBy = "finalClusters", numOfFeats = 24, outName
           assay = "RNA", min.pct = 0.25, only.pos = T)
 
 
+seu.obj$celltype.l1 <- seu.obj$majorID_pertyName
+seu.obj$celltype.l2 <- seu.obj$finalClusters
 ### Data supplemental - export data for cell browser
-ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, dir = "./output/cb_input/", 
-               markers = "./output/viln/allCells/eqsyn_n1_n1_gene_list.csv", 
-               reduction = "umap",  colsTOkeep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "Phase", "majorID", "clusterID", "name", "cellSource"), skipEXPR = F,
-               test = F,
-               feats = c("PTPRC", "CD3E", "CD8A", "GZMA", 
-                                     "IL7R", "ANPEP", "FLT3", "DLA-DRA", 
-                                     "CD4", "MS4A1", "FBLN1","ACAT2")
-                          )
-
+ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, outDir = "./output/cb_input/", 
+               markers = "./output/supplementalData/supplemental_data_9_gene_list.csv", 
+               reduction = "umap",  colsTOkeep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "clusterID",
+                                                   "Phase", "celltype.l1", "celltype.l2",  "name", "cellSource"), 
+               skipEXPR = F, test = F,
+               feats = c(
+                   "PTPRC","CD3E","AIF1","CD68",
+                   "CD34","ESAM","NOTCH3","ACTA2",
+                   "FBLN1","COL1A1","IGFBP2","CXCL14",
+                   "IL13RA2","DEFB1","DNASE1L3","CD55"
+               )
+              )
 
 ### Fig 5a: plot inital cluster umap
 pi <- DimPlot(seu.obj, 
@@ -185,6 +190,33 @@ geom_hline(yintercept = 0) + scale_color_manual(values = c("blue", "red","grey")
 ggsave(paste("./output/", outName, "/",outName, "_fig2c.png", sep = ""), width = 3.5, height = 2, scale = 2 )
 
 
+
+#column_title_gp = gpar(fontsize = 14, fontface = "bold")
+# Export supplemental data
+table(seu.obj$finalClusters, seu.obj$name) %>%
+    as.data.frame() %>%
+    separate(Var2, sep = "_", into = c("cellSource", NA),  remove = F) %>%
+    group_by(Var2) %>%
+    mutate(pct = round(prop.table(Freq), 4)) %>%
+    group_by(cellSource, Var1) %>%
+    summarise(across(
+        .cols = pct, 
+        .fns = list(MEAN = mean, SD = sd), na.rm = TRUE, 
+        .names = "{col}-{fn}"
+    )) %>% 
+    tidyr::pivot_longer(cols = where(is.double)) %>% 
+    mutate(
+        NAME = gsub("\\-.*", "", name),
+        STAT = gsub(".*-", "", name),
+        value = round((value * 100), 2)
+    ) %>% 
+    
+    select(-name, -NAME) %>% 
+    pivot_wider(names_from = c(STAT, cellSource), values_from  = value) %>%
+    left_join(p$data[ , -c(2, 3)], by = c("Var1" = "clusters")) %>%
+    rename(`Cell Type` = Var1) %>%
+    write.csv(., "./output/supplementalData/syn_permRes.csv", row.names = F)
+
 ### DGE analysis using leinent Wilcoxon rank-sum test
 
 
@@ -220,6 +252,12 @@ cnts_mat <- do.call(rbind, df.list)  %>%
     summarize(nRow = n()) %>% 
     pivot_wider(names_from = cellType, values_from = nRow) %>% 
     as.matrix() %>% t()
+
+# Generate table with cell numbers for reviwer
+as.data.frame(table(seu.obj$finalClusters, seu.obj$name)) %>% 
+    pivot_wider(names_from = "Var2", values_from = "Freq") %>%
+    rename(`Cell type` = Var1) %>%
+    write.csv(., "./output/supplementalData/cell_counts_syn.csv", row.names = F)
 
 colnames(cnts_mat) <- cnts_mat[1,]
 cnts_mat <- cnts_mat[-c(1),]
