@@ -167,6 +167,16 @@ ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, outDir = "./output/cb_
                )
               )
 
+#export the data for Zenodo
+seu.obj <- cleanMeta(
+    seu.obj = seu.obj, 
+    metaSlot_keep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "Phase", "majorID", 
+        "nCount_SCT", "nFeature_SCT", "clusterID",
+        "name", "cellSource", "celltype.l1", "celltype.l2"
+    )
+)
+saveRDS(seu.obj, "./output/s3/eq_synovial_fluid_tcell_annotated.rds")
+
 #load in colors
 majorColors.df <- read.csv("sf_idents_tcell_08-10-2023.csv")
 majorColors.df <- majorColors.df[!duplicated(majorColors.df$celltype.l2),]

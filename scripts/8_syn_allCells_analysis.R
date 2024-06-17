@@ -119,6 +119,16 @@ ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, outDir = "./output/cb_
                )
               )
 
+#export the data for Zenodo
+seu.obj <- cleanMeta(
+    seu.obj = seu.obj, 
+    metaSlot_keep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "Phase", "majorID", 
+        "nCount_SCT", "nFeature_SCT", "clusterID",
+        "name", "cellSource", "celltype.l1", "celltype.l2"
+    )
+)
+saveRDS(seu.obj, "./output/s3/eq_synovium_annotated.rds")
+
 ### Fig 5a: plot inital cluster umap
 pi <- DimPlot(seu.obj, 
               reduction = "umap", 

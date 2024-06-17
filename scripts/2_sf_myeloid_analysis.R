@@ -1,5 +1,10 @@
 #!/usr/bin/Rscript
 
+bash /projects/dyammons@colostate.edu/software/zenodo-upload/zenodo_upload.sh 11979927 eq_synovial_fluid_annotated.rds
+bash /projects/dyammons@colostate.edu/software/zenodo-upload/zenodo_upload.sh 11979927 eq_synovial_fluid_myeloid_annotated.rds
+bash /projects/dyammons@colostate.edu/software/zenodo-upload/zenodo_upload.sh 11979927 eq_synovial_fluid_tcell_annotated.rds
+bash /projects/dyammons@colostate.edu/software/zenodo-upload/zenodo_upload.sh 11979927 eq_synovium_annotated.rds
+
 #load custom functions & packages
 source("/pl/active/dow_lab/dylan/repos/scrna-seq/analysis-code/customFunctions.R")
 library(scProportionTest)
@@ -207,6 +212,16 @@ ExportToCB_cus(seu.obj = seu.obj, dataset.name = outName, outDir = "./output/cb_
                    "TOP2A"
                )
               )
+
+#export the data for Zenodo
+seu.obj <- cleanMeta(
+    seu.obj = seu.obj, 
+    metaSlot_keep = c("orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "Phase", "majorID", 
+        "nCount_SCT", "nFeature_SCT", "clusterID",
+        "name", "cellSource", "majorID", "celltype.l2"
+    )
+)
+saveRDS(seu.obj, "./output/s3/eq_synovial_fluid_myeloid_annotated.rds")
 
 #load in cell type colors
 colArray <- read.csv("./sf_idents_08-01-2023.csv")
