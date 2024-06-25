@@ -37,7 +37,7 @@ Link to UCSC Cell Browser documentation: https://cellbrowser.readthedocs.io/en/m
 
 ### 2. Cell type annotations with defining markers
 
-Cell markers lists were curated using the full dataset of 3 healthy and 4 chronic inflammatory enteropathy (CIE) dogs. The top 50 defining features (identified using `FindAllMarkers` for each cell type were considered, with the top 24 features evaluated for specificity using violin plots and preference given to unique features only found in the top 50 of one cell type.
+Cell markers lists were curated using the full synovial fluid dataset of 3 normal and 3 osteoarthritis (OA) affected euqine joints. The top 50 defining features (identified using `FindAllMarkers` for each cell type were considered, with the top 24 features evaluated for specificity using violin plots and preference given to unique features only found in the top 50 of one cell type.
 
 <details open><summary>Cell type gene signatures</summary>
 <p>
