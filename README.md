@@ -6,6 +6,8 @@
 This GitHub repository contains all the analysis code used in, "Characterization of the single cell landscape in normal and osteoarthritic equine joints."
 
 The manuscript has been conditionally accepted  and will be published in Annals of Translational Medicine shortly.
+If you use our raw/processed data, extract data using the UCSC Cell Browser portal, or use portions of our code in your analysis, please consider citing:
+> Ammons, D. T., Chow, L., Goodrich, L., Bass, L., Larson, B., Williams, Z. J., Stoneback, J. W., Dow, S., & Pezzanite, L. M. (2024). Characterization of the single cell landscape in normal and osteoarthritic equine joints. Annals of Translational Medicine, 12(5), 88. https://doi.org/10.21037/atm-24-40
 
 ## Repository goals: 
 - provide a resource to make the data generated from this project accessible
