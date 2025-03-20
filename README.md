@@ -23,10 +23,10 @@ If you have any questions or concerns, please submit an issue, contact the corre
 
 
 ## Supplemental data and potential uses:
-0. [Browse the data](#browse-the-complete-annotated-dataset)
-0. [Cell type annotations](#cell-type-annotations-with-defining-markers)
-0. [Reference Mapping](#using-the-data-to-complete-reference-mapping)
-0. [Module scoring](#module-scoring)
+1. [Browse the data](#browse-the-complete-annotated-dataset)
+1. [Cell type annotations](#cell-type-annotations-with-defining-markers)
+1. [Reference Mapping](#using-the-data-to-complete-reference-mapping)
+1. [Module scoring](#module-scoring)
 
 ### Browse the complete annotated dataset
 
@@ -37,7 +37,7 @@ Link to the dataset: https://equine-joint-oa.cells.ucsc.edu
 
 Link to UCSC Cell Browser documentation: https://cellbrowser.readthedocs.io/en/master/
 
-### 2. Cell type annotations with defining markers
+### Cell type annotations with defining markers
 
 Cell markers lists were curated using the full synovial fluid dataset of 3 normal and 3 osteoarthritis (OA) affected euqine joints. The top 50 defining features (identified using `FindAllMarkers` for each cell type were considered, with the top 24 features evaluated for specificity using violin plots and preference given to unique features only found in the top 50 of one cell type.
 
@@ -124,7 +124,7 @@ pi <- DimPlot(
 ggsave("./output/referenceMap.png", width = 7, height = 7)
 ```
 
-### 4. Module scoring
+### Module scoring
 Module scoring is a supplemental approach that can be applied to single cell datasets with the goal of providing further insights into cell identities. The approach described below uses the Seurat function `AddModuleScore` and the gene lists presented in Table 2 of our associated manuscript. 
 
 The concept of the AddModuleScore() function is similar to GSEA, but also distinct in many ways. Read the [Seurat documentation](https://satijalab.org/seurat/reference/addmodulescore) and/or check out [this webpage](https://www.waltermuskovic.com/2021/04/15/seurat-s-addmodulescore-function/) for more details.
